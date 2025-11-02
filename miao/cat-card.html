@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>喵宇宙 - 猫咪展示卡片</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            width: 100%;
+        }
+
+        .title {
+            text-align: center;
+            color: white;
+            font-size: 2.5rem;
+            margin-bottom: 40px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .cards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 30px;
+            padding: 20px;
+        }
+
+        /* Cat card styling */
+        .cat-card {
+            background: white;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            cursor: pointer;
+        }
+
+        .cat-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .cat-image-container {
+            width: 100%;
+            height: 250px;
+            overflow: hidden;
+            background: #f5f5f5;
+            position: relative;
+        }
+
+        .cat-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.3s ease;
+        }
+
+        .cat-card:hover .cat-image {
+            transform: scale(1.1);
+        }
+
+        .cat-badge {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Photo upload button styling */
+        .upload-button {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(102, 126, 234, 0.95);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 25px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            z-index: 10;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .upload-button:hover {
+            background: rgba(102, 126, 234, 1);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+        }
+
+        .cat-image-container:hover .upload-button {
+            opacity: 1;
+        }
+
+        .cat-image-container:hover::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.4);
+            z-index: 5;
+        }
+
+        /* Hide file input */
+        .file-input {
+            display: none;
+        }
+
+        .cat-info {
+            padding: 20px;
+        }
+
+        .cat-name {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .cat-breed {
+            color: #667eea;
+            font-size: 0.95rem;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+
+        .cat-description {
+            color: #666;
+            font-size: 0.9rem;
+            line-height: 1.6;
+            margin-bottom: 15px;
+        }
+
+        .cat-stats {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .stat-item {
+            flex: 1;
+            text-align: center;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+
+        .stat-label {
+            font-size: 0.75rem;
+            color: #999;
+            margin-bottom: 5px;
+        }
+
+        .stat-value {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #333;
+        }
+
+        .cat-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .tag {
+            padding: 5px 12px;
+            background: #e9ecef;
+            color: #495057;
+            border-radius: 15px;
+            font-size: 0.8rem;
+        }
+
+        /* Loading animation */
+        .loading {
+            text-align: center;
+            color: white;
+            font-size: 1.2rem;
+        }
+
+        .loading-spinner {
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-top: 4px solid white;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Responsive design */
+        @media (max-width: 768px) {
+            .title {
+                font-size: 2rem;
+            }
+
+            .cards-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="title">🐱 喵宇宙 </h1>
+        <div id="cardsContainer" class="cards-grid">
+            <div class="loading">
+                <div class="loading-spinner"></div>
+                <p>加载中...</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Sample cat data - 示例猫咪数据
+        const catsData = [
+            {
+                id: 1,
+                name: "小橘",
+                breed: "橘猫",
+                age: "2岁",
+                gender: "公",
+                description: "性格温顺，喜欢晒太阳，对小鱼干没有抵抗力。是个不折不扣的吃货，看见食物就会喵喵叫。",
+                image: "https://images.unsplash.com/photo-1574158622682-e40e69881006?w=500&h=400&fit=crop",
+                badge: "最受欢迎",
+                tags: ["温顺", "亲人", "吃货"]
+            },
+            {
+                id: 2,
+                name: "雪球",
+                breed: "英国短毛猫",
+                age: "1岁",
+                gender: "母",
+                description: "优雅的小公主，毛色雪白纯净，眼睛是漂亮的蓝色。喜欢安静的环境，偶尔会高冷。",
+                image: "https://images.unsplash.com/photo-1513360371669-4adf3dd7dff8?w=500&h=400&fit=crop",
+                badge: "新成员",
+                tags: ["优雅", "安静", "高冷"]
+            },
+            {
+                id: 3,
+                name: "虎斑",
+                breed: "美国短毛猫",
+                age: "3岁",
+                gender: "公",
+                description: "活力十足的运动健将，喜欢爬高上低，对逗猫棒和激光笔非常感兴趣。",
+                image: "https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?w=500&h=400&fit=crop",
+                badge: "活力之星",
+                tags: ["活泼", "好动", "爱玩"]
+            },
+            {
+                id: 4,
+                name: "布丁",
+                breed: "布偶猫",
+                age: "1.5岁",
+                gender: "母",
+                description: "拥有深蓝色的眼睛和柔软的长毛，性格温柔体贴，是完美的陪伴型猫咪。",
+                image: "https://images.unsplash.com/photo-1529778873920-4da4926a72c2?w=500&h=400&fit=crop",
+                badge: "温柔天使",
+                tags: ["温柔", "粘人", "颜值高"]
+            },
+            {
+                id: 5,
+                name: "黑炭",
+                breed: "黑猫",
+                age: "4岁",
+                gender: "公",
+                description: "全身乌黑发亮，眼睛在黑暗中会发出神秘的绿光。性格独立，但对主人非常忠诚。",
+                image: "https://images.unsplash.com/photo-1494256997604-768d1f608cac?w=500&h=400&fit=crop",
+                badge: "神秘使者",
+                tags: ["独立", "忠诚", "神秘"]
+            },
+            {
+                id: 6,
+                name: "奶茶",
+                breed: "暹罗猫",
+                age: "2.5岁",
+                gender: "母",
+                description: "拥有独特的重点色花纹和蓝宝石般的眼睛。性格活泼，喜欢与人交流，叫声独特。",
+                image: "https://images.unsplash.com/photo-1543852786-1cf6624b9987?w=500&h=400&fit=crop",
+                badge: "话痨小姐",
+                tags: ["活泼", "健谈", "聪明"]
+            }
+        ];
+
+        /**
+         * Initialize the cat cards display
+         * 初始化猫咪卡片展示
+         */
+        function initCatCards() {
+            const container = document.getElementById('cardsContainer');
+
+            // Simulate loading delay - 模拟加载延迟
+            setTimeout(() => {
+                container.innerHTML = '';
+
+                // Render each cat card - 渲染每个猫咪卡片
+                catsData.forEach(cat => {
+                    const card = createCatCard(cat);
+                    container.appendChild(card);
+                });
+
+                // Load saved images after cards are rendered - 卡片渲染后加载保存的图片
+                setTimeout(() => {
+                    loadSavedImages();
+                }, 100);
+            }, 800);
+        }
+
+        /**
+         * Create a single cat card element
+         * 创建单个猫咪卡片元素
+         * @param {Object} cat - Cat data object
+         * @returns {HTMLElement} - Card element
+         */
+        function createCatCard(cat) {
+            // Create card container - 创建卡片容器
+            const card = document.createElement('div');
+            card.className = 'cat-card';
+            card.setAttribute('data-cat-id', cat.id);
+
+            // Build card HTML - 构建卡片HTML
+            card.innerHTML = `
+                <div class="cat-image-container">
+                    <img src="${cat.image}" alt="${cat.name}" class="cat-image" data-cat-id="${cat.id}">
+                    <div class="cat-badge">${cat.badge}</div>
+                    <button class="upload-button" data-cat-id="${cat.id}">📷 选择照片</button>
+                    <input type="file" class="file-input" accept="image/*" data-cat-id="${cat.id}">
+                </div>
+                <div class="cat-info">
+                    <h2 class="cat-name">${cat.name}</h2>
+                    <div class="cat-breed">${cat.breed}</div>
+                    <p class="cat-description">${cat.description}</p>
+                    <div class="cat-stats">
+                        <div class="stat-item">
+                            <div class="stat-label">年龄</div>
+                            <div class="stat-value">${cat.age}</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">性别</div>
+                            <div class="stat-value">${cat.gender}</div>
+                        </div>
+                    </div>
+                    <div class="cat-tags">
+                        ${cat.tags.map(tag => `<span class="tag">${tag}</span>`).join('')}
+                    </div>
+                </div>
+            `;
+
+            // Setup photo upload functionality - 设置照片上传功能
+            setupPhotoUpload(card, cat.id);
+
+            return card;
+        }
+
+        /**
+         * Setup photo upload functionality for a cat card
+         * 为猫咪卡片设置照片上传功能
+         * @param {HTMLElement} card - Card element
+         * @param {number} catId - Cat ID
+         */
+        function setupPhotoUpload(card, catId) {
+            const uploadButton = card.querySelector('.upload-button');
+            const fileInput = card.querySelector('.file-input');
+            const catImage = card.querySelector('.cat-image');
+
+            // Click upload button to trigger file input - 点击上传按钮触发文件选择
+            uploadButton.addEventListener('click', (event) => {
+                event.stopPropagation(); // Prevent card click event - 阻止卡片点击事件
+                fileInput.click();
+            });
+
+            // Handle file selection - 处理文件选择
+            fileInput.addEventListener('change', (event) => {
+                const file = event.target.files[0];
+
+                // Validate file exists and is an image - 验证文件存在且为图片
+                if (!file || !file.type.startsWith('image/')) {
+                    alert('请选择有效的图片文件');
+                    return;
+                }
+
+                // Process and display the uploaded image - 处理并显示上传的图片
+                processAndDisplayImage(file, catImage, catId);
+            });
+        }
+
+        /**
+         * Process uploaded image and display it on the card
+         * 处理上传的图片并在卡片上显示
+         * @param {File} file - Image file
+         * @param {HTMLImageElement} imgElement - Image element to update
+         * @param {number} catId - Cat ID
+         */
+        function processAndDisplayImage(file, imgElement, catId) {
+            const reader = new FileReader();
+
+            // Read file and convert to data URL - 读取文件并转换为数据URL
+            reader.onload = (e) => {
+                const imageUrl = e.target.result;
+
+                // Update image source - 更新图片源
+                // CSS object-fit: cover will handle cropping automatically
+                // CSS的object-fit: cover会自动处理裁剪
+                imgElement.src = imageUrl;
+
+                // Store in localStorage for persistence - 存储到本地存储以持久化
+                try {
+                    localStorage.setItem(`cat-image-${catId}`, imageUrl);
+                } catch (e) {
+                    console.warn('无法保存图片到本地存储:', e);
+                }
+            };
+
+            reader.onerror = () => {
+                alert('文件读取失败，请重试');
+            };
+
+            // Read file as data URL - 读取文件为数据URL
+            reader.readAsDataURL(file);
+        }
+
+        /**
+         * Load saved images from localStorage
+         * 从本地存储加载保存的图片
+         */
+        function loadSavedImages() {
+            catsData.forEach(cat => {
+                const savedImage = localStorage.getItem(`cat-image-${cat.id}`);
+                if (savedImage) {
+                    const imgElement = document.querySelector(`.cat-image[data-cat-id="${cat.id}"]`);
+                    if (imgElement) {
+                        imgElement.src = savedImage;
+                    }
+                }
+            });
+        }
+
+        /**
+         * Handle cat card click event
+         * 处理猫咪卡片点击事件
+         * @param {Object} cat - Cat data object
+         */
+        function handleCardClick(cat) {
+            alert(`你选择了: ${cat.name}\n品种: ${cat.breed}\n${cat.description}`);
+            // In a real application, this could navigate to a detail page
+            // 在实际应用中，这里可以跳转到详情页面
+        }
+
+        /**
+         * Handle image loading errors
+         * 处理图片加载错误
+         * @param {Event} event - Error event
+         */
+        function handleImageError(event) {
+            // Use a placeholder image on error - 错误时使用占位图片
+            event.target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="500" height="400"%3E%3Crect fill="%23f0f0f0" width="500" height="400"/%3E%3Ctext fill="%23999" font-family="sans-serif" font-size="24" dy="200" dx="180"%3E猫咪图片%3C/text%3E%3C/svg%3E';
+        }
+
+        // Add global error handler for images - 为图片添加全局错误处理
+        document.addEventListener('error', (event) => {
+            if (event.target.tagName === 'IMG') {
+                handleImageError(event);
+            }
+        }, true);
+
+        // Initialize when DOM is ready - DOM准备好后初始化
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initCatCards);
+        } else {
+            initCatCards();
+        }
+    </script>
+</body>
+</html>
