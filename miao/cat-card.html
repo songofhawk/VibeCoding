@@ -103,8 +103,9 @@
             cursor: pointer;
             opacity: 0;
             transition: opacity 0.3s ease;
-            z-index: 10;
+            z-index: 20;
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            pointer-events: none;
         }
 
         .upload-button:hover {
@@ -114,6 +115,7 @@
 
         .cat-image-container:hover .upload-button {
             opacity: 1;
+            pointer-events: auto;
         }
 
         .cat-image-container:hover::before {
@@ -130,6 +132,44 @@
         /* Hide file input */
         .file-input {
             display: none;
+        }
+
+        /* GIF generation button - 生成GIF按钮 */
+        .gif-button {
+            position: absolute;
+            bottom: 15px;
+            right: 15px;
+            background: rgba(255, 255, 255, 0.8);
+            border: none;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            z-index: 10;
+            opacity: 0.6;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+        }
+
+        .gif-button:hover {
+            opacity: 1;
+            background: rgba(255, 255, 255, 0.95);
+            transform: scale(1.1);
+        }
+
+        .gif-button.generating {
+            background: rgba(102, 126, 234, 0.9);
+            color: white;
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 0.6; }
+            50% { opacity: 1; }
         }
 
         /* Carousel controls - 轮播图控制 */
@@ -396,6 +436,9 @@
         </div>
     </div>
 
+    <!-- GIF generation library -->
+    <script src="https://cdn.jsdelivr.net/npm/gif.js@0.2.0/dist/gif.js"></script>
+
     <script>
         // Sample cat data - 示例猫咪数据
         const catsData = [
@@ -510,6 +553,7 @@
                     <div class="cat-badge">${cat.badge}</div>
                     <button class="upload-button" data-cat-id="${cat.id}">📷 选择照片</button>
                     <input type="file" class="file-input" accept="image/*" multiple data-cat-id="${cat.id}">
+                    <button class="gif-button" data-cat-id="${cat.id}" title="生成轮播GIF">🎬</button>
                     <div class="carousel-nav">
                         <button class="carousel-btn prev-btn">‹</button>
                         <button class="carousel-btn next-btn">›</button>
@@ -545,6 +589,9 @@
 
             // Setup edit functionality - 设置编辑功能
             setupEditMode(card, cat);
+
+            // Setup GIF generation functionality - 设置GIF生成功能
+            setupGifGeneration(card, cat.id);
 
             return card;
         }
@@ -605,31 +652,51 @@
             });
 
             // Wait for all images to be read - 等待所有图片读取完成
-            Promise.all(imagePromises).then(imageUrls => {
+            Promise.all(imagePromises).then(newImageUrls => {
                 // Find cat data and update images - 查找猫咪数据并更新图片
                 const cat = catsData.find(c => c.id === catId);
                 if (cat) {
-                    cat.images = imageUrls;
+                    // Append new images to existing images - 将新图片追加到现有图片列表
+                    cat.images = [...cat.images, ...newImageUrls];
 
                     // Save to localStorage - 保存到本地存储
                     try {
-                        localStorage.setItem(`cat-images-${catId}`, JSON.stringify(imageUrls));
+                        localStorage.setItem(`cat-images-${catId}`, JSON.stringify(cat.images));
                     } catch (e) {
                         console.warn('无法保存图片到本地存储:', e);
                     }
 
-                    // Update display - 更新显示
+                    // Update display to show the first new image - 更新显示，显示第一张新图片
                     const imgElement = card.querySelector('.cat-image');
-                    imgElement.src = imageUrls[0];
+                    const currentIndex = cat.images.length - newImageUrls.length;
+                    imgElement.src = cat.images[currentIndex];
 
                     // Update indicator - 更新指示器
                     const indicator = card.querySelector('.carousel-indicator');
-                    indicator.textContent = `1/${imageUrls.length}`;
+                    indicator.textContent = `${currentIndex + 1}/${cat.images.length}`;
 
-                    // Reset carousel index - 重置轮播索引
-                    card.carouselIndex = 0;
+                    // Update carousel index - 更新轮播索引
+                    card.carouselIndex = currentIndex;
+
+                    // Stop existing autoplay if any - 停止现有的自动播放
+                    if (card.carouselInterval) {
+                        clearInterval(card.carouselInterval);
+                    }
+
+                    // Restart autoplay if more than 1 image - 如果有多张图片则重启自动播放
+                    if (cat.images.length > 1) {
+                        card.carouselInterval = setInterval(() => {
+                            const images = cat.images;
+                            if (images.length > 0) {
+                                card.carouselIndex = (card.carouselIndex + 1) % images.length;
+                                imgElement.src = images[card.carouselIndex];
+                                indicator.textContent = `${card.carouselIndex + 1}/${images.length}`;
+                            }
+                        }, 3000);
+                    }
                 }
-            }).catch(() => {
+            }).catch((error) => {
+                console.error('图片读取错误:', error);
                 alert('图片读取失败，请重试');
             });
         }
@@ -872,8 +939,8 @@
         }
 
         /**
-         * Load saved images from localStorage
-         * 从本地存储加载保存的图片
+         * Load saved images and data from localStorage
+         * 从本地存储加载保存的图片和数据
          */
         function loadSavedImages() {
             catsData.forEach(cat => {
@@ -901,19 +968,157 @@
                 // Update display - 更新显示
                 const card = document.querySelector(`.cat-card[data-cat-id="${cat.id}"]`);
                 if (card) {
+                    // Update image - 更新图片
                     const imgElement = card.querySelector('.cat-image');
                     if (imgElement && cat.images[0]) {
                         imgElement.src = cat.images[0];
                     }
 
+                    // Update indicator - 更新指示器
                     const indicator = card.querySelector('.carousel-indicator');
                     if (indicator) {
                         indicator.textContent = `1/${cat.images.length}`;
+                    }
+
+                    // Update cat info display - 更新猫咪信息显示
+                    const catInfo = card.querySelector('.cat-info');
+                    if (catInfo) {
+                        const nameElement = catInfo.querySelector('.cat-name');
+                        const breedElement = catInfo.querySelector('.cat-breed');
+                        const descElement = catInfo.querySelector('.cat-description');
+                        const ageElement = catInfo.querySelector('.stat-value');
+                        const tagsContainer = catInfo.querySelector('.cat-tags');
+
+                        if (nameElement) nameElement.textContent = cat.name;
+                        if (breedElement) breedElement.textContent = cat.breed;
+                        if (descElement) descElement.textContent = cat.description;
+                        if (ageElement) ageElement.textContent = cat.age;
+                        if (tagsContainer) {
+                            tagsContainer.innerHTML = cat.tags.map(tag => `<span class="tag">${tag}</span>`).join('');
+                        }
                     }
                 }
             });
         }
 
+
+        /**
+         * Setup GIF generation functionality for a cat card
+         * 为猫咪卡片设置GIF生成功能
+         * @param {HTMLElement} card - Card element
+         * @param {number} catId - Cat ID
+         */
+        function setupGifGeneration(card, catId) {
+            const gifButton = card.querySelector('.gif-button');
+            const imgElement = card.querySelector('.cat-image');
+
+            gifButton.addEventListener('click', async (event) => {
+                event.stopPropagation();
+
+                // Get cat data - 获取猫咪数据
+                const cat = catsData.find(c => c.id === catId);
+                if (!cat || cat.images.length < 2) {
+                    alert('需要至少2张图片才能生成GIF动图！');
+                    return;
+                }
+
+                // Disable button and show generating state - 禁用按钮并显示生成状态
+                gifButton.disabled = true;
+                gifButton.classList.add('generating');
+                gifButton.textContent = '⏳';
+
+                try {
+                    // Create GIF encoder - 创建GIF编码器
+                    const gif = new GIF({
+                        workers: 2,
+                        quality: 10,
+                        width: 500,
+                        height: 400,
+                        workerScript: 'https://cdn.jsdelivr.net/npm/gif.js@0.2.0/dist/gif.worker.js'
+                    });
+
+                    // Load and add all images to GIF - 加载并添加所有图片到GIF
+                    for (let i = 0; i < cat.images.length; i++) {
+                        const img = await loadImage(cat.images[i]);
+
+                        // Create canvas and draw resized image - 创建画布并绘制调整大小的图片
+                        const canvas = document.createElement('canvas');
+                        canvas.width = 500;
+                        canvas.height = 400;
+                        const ctx = canvas.getContext('2d');
+
+                        // Draw image with object-fit: cover effect - 使用cover效果绘制图片
+                        const imgRatio = img.width / img.height;
+                        const canvasRatio = canvas.width / canvas.height;
+                        let drawWidth, drawHeight, offsetX, offsetY;
+
+                        if (imgRatio > canvasRatio) {
+                            // Image is wider - 图片更宽
+                            drawHeight = canvas.height;
+                            drawWidth = img.width * (canvas.height / img.height);
+                            offsetX = (canvas.width - drawWidth) / 2;
+                            offsetY = 0;
+                        } else {
+                            // Image is taller - 图片更高
+                            drawWidth = canvas.width;
+                            drawHeight = img.height * (canvas.width / img.width);
+                            offsetX = 0;
+                            offsetY = (canvas.height - drawHeight) / 2;
+                        }
+
+                        ctx.drawImage(img, offsetX, offsetY, drawWidth, drawHeight);
+
+                        // Add frame to GIF with 1 second delay - 添加帧到GIF，延迟1秒
+                        gif.addFrame(canvas, { delay: 1000 });
+                    }
+
+                    // Render GIF - 渲染GIF
+                    gif.on('finished', (blob) => {
+                        // Download GIF - 下载GIF
+                        const url = URL.createObjectURL(blob);
+                        const link = document.createElement('a');
+                        link.href = url;
+                        link.download = `${cat.name}-carousel.gif`;
+                        link.click();
+                        URL.revokeObjectURL(url);
+
+                        // Reset button - 重置按钮
+                        gifButton.disabled = false;
+                        gifButton.classList.remove('generating');
+                        gifButton.textContent = '🎬';
+
+                        alert(`GIF动图生成成功！已保存为 ${cat.name}-carousel.gif`);
+                    });
+
+                    gif.render();
+
+                } catch (error) {
+                    console.error('GIF生成错误:', error);
+                    alert('GIF生成失败，请重试！');
+
+                    // Reset button - 重置按钮
+                    gifButton.disabled = false;
+                    gifButton.classList.remove('generating');
+                    gifButton.textContent = '🎬';
+                }
+            });
+        }
+
+        /**
+         * Load image and return as Image element
+         * 加载图片并返回Image元素
+         * @param {string} src - Image source URL
+         * @returns {Promise<HTMLImageElement>}
+         */
+        function loadImage(src) {
+            return new Promise((resolve, reject) => {
+                const img = new Image();
+                img.crossOrigin = 'anonymous';
+                img.onload = () => resolve(img);
+                img.onerror = reject;
+                img.src = src;
+            });
+        }
 
         /**
          * Handle image loading errors
