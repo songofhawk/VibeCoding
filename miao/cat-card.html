@@ -436,8 +436,8 @@
         </div>
     </div>
 
-    <!-- GIF generation library -->
-    <script src="https://cdn.jsdelivr.net/npm/gif.js@0.2.0/dist/gif.js"></script>
+    <!-- GIF generation library - using gifshot which doesn't require external workers -->
+    <script src="https://cdn.jsdelivr.net/npm/gifshot@0.4.5/dist/gifshot.min.js"></script>
 
     <script>
         // Sample cat data - 示例猫咪数据
@@ -1010,7 +1010,6 @@
          */
         function setupGifGeneration(card, catId) {
             const gifButton = card.querySelector('.gif-button');
-            const imgElement = card.querySelector('.cat-image');
 
             gifButton.addEventListener('click', async (event) => {
                 event.stopPropagation();
@@ -1028,69 +1027,40 @@
                 gifButton.textContent = '⏳';
 
                 try {
-                    // Create GIF encoder - 创建GIF编码器
-                    const gif = new GIF({
-                        workers: 2,
-                        quality: 10,
-                        width: 500,
-                        height: 400,
-                        workerScript: 'https://cdn.jsdelivr.net/npm/gif.js@0.2.0/dist/gif.worker.js'
-                    });
+                    // Prepare images for gifshot - 为 gifshot 准备图片
+                    const imageElements = await Promise.all(
+                        cat.images.map(src => loadImageForGif(src))
+                    );
 
-                    // Load and add all images to GIF - 加载并添加所有图片到GIF
-                    for (let i = 0; i < cat.images.length; i++) {
-                        const img = await loadImage(cat.images[i]);
+                    // Create GIF using gifshot - 使用 gifshot 创建 GIF
+                    gifshot.createGIF({
+                        images: imageElements,
+                        gifWidth: 500,
+                        gifHeight: 400,
+                        interval: 1, // 1 second per frame
+                        numFrames: cat.images.length,
+                        frameDuration: 1, // 1 second per frame
+                        sampleInterval: 10,
+                        numWorkers: 2
+                    }, (obj) => {
+                        if (!obj.error) {
+                            // Download GIF - 下载 GIF
+                            const link = document.createElement('a');
+                            link.href = obj.image;
+                            link.download = `${cat.name}-carousel.gif`;
+                            link.click();
 
-                        // Create canvas and draw resized image - 创建画布并绘制调整大小的图片
-                        const canvas = document.createElement('canvas');
-                        canvas.width = 500;
-                        canvas.height = 400;
-                        const ctx = canvas.getContext('2d');
-
-                        // Draw image with object-fit: cover effect - 使用cover效果绘制图片
-                        const imgRatio = img.width / img.height;
-                        const canvasRatio = canvas.width / canvas.height;
-                        let drawWidth, drawHeight, offsetX, offsetY;
-
-                        if (imgRatio > canvasRatio) {
-                            // Image is wider - 图片更宽
-                            drawHeight = canvas.height;
-                            drawWidth = img.width * (canvas.height / img.height);
-                            offsetX = (canvas.width - drawWidth) / 2;
-                            offsetY = 0;
+                            alert(`GIF动图生成成功！已保存为 ${cat.name}-carousel.gif`);
                         } else {
-                            // Image is taller - 图片更高
-                            drawWidth = canvas.width;
-                            drawHeight = img.height * (canvas.width / img.width);
-                            offsetX = 0;
-                            offsetY = (canvas.height - drawHeight) / 2;
+                            console.error('GIF生成错误:', obj.error);
+                            alert('GIF生成失败，请重试！');
                         }
-
-                        ctx.drawImage(img, offsetX, offsetY, drawWidth, drawHeight);
-
-                        // Add frame to GIF with 1 second delay - 添加帧到GIF，延迟1秒
-                        gif.addFrame(canvas, { delay: 1000 });
-                    }
-
-                    // Render GIF - 渲染GIF
-                    gif.on('finished', (blob) => {
-                        // Download GIF - 下载GIF
-                        const url = URL.createObjectURL(blob);
-                        const link = document.createElement('a');
-                        link.href = url;
-                        link.download = `${cat.name}-carousel.gif`;
-                        link.click();
-                        URL.revokeObjectURL(url);
 
                         // Reset button - 重置按钮
                         gifButton.disabled = false;
                         gifButton.classList.remove('generating');
                         gifButton.textContent = '🎬';
-
-                        alert(`GIF动图生成成功！已保存为 ${cat.name}-carousel.gif`);
                     });
-
-                    gif.render();
 
                 } catch (error) {
                     console.error('GIF生成错误:', error);
@@ -1105,16 +1075,46 @@
         }
 
         /**
-         * Load image and return as Image element
-         * 加载图片并返回Image元素
+         * Load image and create canvas with proper sizing for GIF
+         * 加载图片并创建适当大小的画布用于 GIF
          * @param {string} src - Image source URL
-         * @returns {Promise<HTMLImageElement>}
+         * @returns {Promise<HTMLCanvasElement>}
          */
-        function loadImage(src) {
+        function loadImageForGif(src) {
             return new Promise((resolve, reject) => {
                 const img = new Image();
                 img.crossOrigin = 'anonymous';
-                img.onload = () => resolve(img);
+
+                img.onload = () => {
+                    // Create canvas and draw resized image - 创建画布并绘制调整大小的图片
+                    const canvas = document.createElement('canvas');
+                    canvas.width = 500;
+                    canvas.height = 400;
+                    const ctx = canvas.getContext('2d');
+
+                    // Draw image with object-fit: cover effect - 使用 cover 效果绘制图片
+                    const imgRatio = img.width / img.height;
+                    const canvasRatio = canvas.width / canvas.height;
+                    let drawWidth, drawHeight, offsetX, offsetY;
+
+                    if (imgRatio > canvasRatio) {
+                        // Image is wider - 图片更宽
+                        drawHeight = canvas.height;
+                        drawWidth = img.width * (canvas.height / img.height);
+                        offsetX = (canvas.width - drawWidth) / 2;
+                        offsetY = 0;
+                    } else {
+                        // Image is taller - 图片更高
+                        drawWidth = canvas.width;
+                        drawHeight = img.height * (canvas.width / img.width);
+                        offsetX = 0;
+                        offsetY = (canvas.height - drawHeight) / 2;
+                    }
+
+                    ctx.drawImage(img, offsetX, offsetY, drawWidth, drawHeight);
+                    resolve(canvas);
+                };
+
                 img.onerror = reject;
                 img.src = src;
             });
