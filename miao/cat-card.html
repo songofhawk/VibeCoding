@@ -132,6 +132,160 @@
             display: none;
         }
 
+        /* Carousel controls - 轮播图控制 */
+        .carousel-nav {
+            position: absolute;
+            top: 50%;
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            padding: 0 10px;
+            transform: translateY(-50%);
+            z-index: 15;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            pointer-events: none;
+        }
+
+        .cat-image-container:hover .carousel-nav {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .carousel-btn {
+            background: rgba(255, 255, 255, 0.9);
+            border: none;
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .carousel-btn:hover {
+            background: white;
+            transform: scale(1.1);
+        }
+
+        .carousel-indicator {
+            position: absolute;
+            bottom: 15px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.6);
+            color: white;
+            padding: 5px 12px;
+            border-radius: 15px;
+            font-size: 0.8rem;
+            z-index: 15;
+        }
+
+        /* Edit button - 编辑按钮 */
+        .edit-button {
+            display: block;
+            width: 100%;
+            padding: 10px;
+            margin-top: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .edit-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        /* Edit mode styling - 编辑模式样式 */
+        .cat-card.editing {
+            border: 3px solid #667eea;
+            box-shadow: 0 15px 40px rgba(102, 126, 234, 0.3);
+        }
+
+        .cat-card.editing .cat-card:hover {
+            transform: none;
+        }
+
+        .edit-input {
+            width: 100%;
+            padding: 8px 12px;
+            border: 2px solid #667eea;
+            border-radius: 8px;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 10px;
+            background: #f8f9ff;
+        }
+
+        .edit-input:focus {
+            outline: none;
+            border-color: #764ba2;
+            background: white;
+        }
+
+        .edit-input.small {
+            font-size: 1.1rem;
+            font-weight: 400;
+        }
+
+        .edit-input.tiny {
+            font-size: 0.9rem;
+        }
+
+        .stat-item input.edit-input {
+            width: 100%;
+            padding: 5px 8px;
+            text-align: center;
+        }
+
+        .edit-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .edit-actions button {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 10px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .save-button {
+            background: #28a745;
+            color: white;
+        }
+
+        .save-button:hover {
+            background: #218838;
+            transform: translateY(-2px);
+        }
+
+        .cancel-button {
+            background: #6c757d;
+            color: white;
+        }
+
+        .cancel-button:hover {
+            background: #5a6268;
+            transform: translateY(-2px);
+        }
+
         .cat-info {
             padding: 20px;
         }
@@ -252,7 +406,7 @@
                 age: "2岁",
                 gender: "公",
                 description: "性格温顺，喜欢晒太阳，对小鱼干没有抵抗力。是个不折不扣的吃货，看见食物就会喵喵叫。",
-                image: "https://images.unsplash.com/photo-1574158622682-e40e69881006?w=500&h=400&fit=crop",
+                images: ["https://images.unsplash.com/photo-1574158622682-e40e69881006?w=500&h=400&fit=crop"],
                 badge: "最受欢迎",
                 tags: ["温顺", "亲人", "吃货"]
             },
@@ -263,7 +417,7 @@
                 age: "1岁",
                 gender: "母",
                 description: "优雅的小公主，毛色雪白纯净，眼睛是漂亮的蓝色。喜欢安静的环境，偶尔会高冷。",
-                image: "https://images.unsplash.com/photo-1513360371669-4adf3dd7dff8?w=500&h=400&fit=crop",
+                images: ["https://images.unsplash.com/photo-1513360371669-4adf3dd7dff8?w=500&h=400&fit=crop"],
                 badge: "新成员",
                 tags: ["优雅", "安静", "高冷"]
             },
@@ -274,7 +428,7 @@
                 age: "3岁",
                 gender: "公",
                 description: "活力十足的运动健将，喜欢爬高上低，对逗猫棒和激光笔非常感兴趣。",
-                image: "https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?w=500&h=400&fit=crop",
+                images: ["https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?w=500&h=400&fit=crop"],
                 badge: "活力之星",
                 tags: ["活泼", "好动", "爱玩"]
             },
@@ -285,7 +439,7 @@
                 age: "1.5岁",
                 gender: "母",
                 description: "拥有深蓝色的眼睛和柔软的长毛，性格温柔体贴，是完美的陪伴型猫咪。",
-                image: "https://images.unsplash.com/photo-1529778873920-4da4926a72c2?w=500&h=400&fit=crop",
+                images: ["https://images.unsplash.com/photo-1529778873920-4da4926a72c2?w=500&h=400&fit=crop"],
                 badge: "温柔天使",
                 tags: ["温柔", "粘人", "颜值高"]
             },
@@ -296,7 +450,7 @@
                 age: "4岁",
                 gender: "公",
                 description: "全身乌黑发亮，眼睛在黑暗中会发出神秘的绿光。性格独立，但对主人非常忠诚。",
-                image: "https://images.unsplash.com/photo-1494256997604-768d1f608cac?w=500&h=400&fit=crop",
+                images: ["https://images.unsplash.com/photo-1494256997604-768d1f608cac?w=500&h=400&fit=crop"],
                 badge: "神秘使者",
                 tags: ["独立", "忠诚", "神秘"]
             },
@@ -307,7 +461,7 @@
                 age: "2.5岁",
                 gender: "母",
                 description: "拥有独特的重点色花纹和蓝宝石般的眼睛。性格活泼，喜欢与人交流，叫声独特。",
-                image: "https://images.unsplash.com/photo-1543852786-1cf6624b9987?w=500&h=400&fit=crop",
+                images: ["https://images.unsplash.com/photo-1543852786-1cf6624b9987?w=500&h=400&fit=crop"],
                 badge: "话痨小姐",
                 tags: ["活泼", "健谈", "聪明"]
             }
@@ -352,10 +506,15 @@
             // Build card HTML - 构建卡片HTML
             card.innerHTML = `
                 <div class="cat-image-container">
-                    <img src="${cat.image}" alt="${cat.name}" class="cat-image" data-cat-id="${cat.id}">
+                    <img src="${cat.images[0]}" alt="${cat.name}" class="cat-image" data-cat-id="${cat.id}">
                     <div class="cat-badge">${cat.badge}</div>
                     <button class="upload-button" data-cat-id="${cat.id}">📷 选择照片</button>
-                    <input type="file" class="file-input" accept="image/*" data-cat-id="${cat.id}">
+                    <input type="file" class="file-input" accept="image/*" multiple data-cat-id="${cat.id}">
+                    <div class="carousel-nav">
+                        <button class="carousel-btn prev-btn">‹</button>
+                        <button class="carousel-btn next-btn">›</button>
+                    </div>
+                    <div class="carousel-indicator">1/${cat.images.length}</div>
                 </div>
                 <div class="cat-info">
                     <h2 class="cat-name">${cat.name}</h2>
@@ -374,11 +533,18 @@
                     <div class="cat-tags">
                         ${cat.tags.map(tag => `<span class="tag">${tag}</span>`).join('')}
                     </div>
+                    <button class="edit-button">✏️ 编辑信息</button>
                 </div>
             `;
 
             // Setup photo upload functionality - 设置照片上传功能
             setupPhotoUpload(card, cat.id);
+
+            // Setup carousel functionality - 设置轮播功能
+            setupCarousel(card, cat.id);
+
+            // Setup edit functionality - 设置编辑功能
+            setupEditMode(card, cat);
 
             return card;
         }
@@ -392,7 +558,6 @@
         function setupPhotoUpload(card, catId) {
             const uploadButton = card.querySelector('.upload-button');
             const fileInput = card.querySelector('.file-input');
-            const catImage = card.querySelector('.cat-image');
 
             // Click upload button to trigger file input - 点击上传按钮触发文件选择
             uploadButton.addEventListener('click', (event) => {
@@ -400,54 +565,310 @@
                 fileInput.click();
             });
 
-            // Handle file selection - 处理文件选择
+            // Handle multiple file selection - 处理多文件选择
             fileInput.addEventListener('change', (event) => {
-                const file = event.target.files[0];
+                const files = Array.from(event.target.files);
 
-                // Validate file exists and is an image - 验证文件存在且为图片
-                if (!file || !file.type.startsWith('image/')) {
+                // Validate files - 验证文件
+                if (files.length === 0) {
+                    return;
+                }
+
+                // Check all files are images - 检查所有文件都是图片
+                const validFiles = files.filter(file => file.type.startsWith('image/'));
+
+                if (validFiles.length === 0) {
                     alert('请选择有效的图片文件');
                     return;
                 }
 
-                // Process and display the uploaded image - 处理并显示上传的图片
-                processAndDisplayImage(file, catImage, catId);
+                // Process and add multiple images - 处理并添加多张图片
+                processMultipleImages(validFiles, catId, card);
             });
         }
 
         /**
-         * Process uploaded image and display it on the card
-         * 处理上传的图片并在卡片上显示
-         * @param {File} file - Image file
-         * @param {HTMLImageElement} imgElement - Image element to update
+         * Process multiple uploaded images
+         * 处理多张上传的图片
+         * @param {File[]} files - Array of image files
+         * @param {number} catId - Cat ID
+         * @param {HTMLElement} card - Card element
+         */
+        function processMultipleImages(files, catId, card) {
+            const imagePromises = files.map(file => {
+                return new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = (e) => resolve(e.target.result);
+                    reader.onerror = reject;
+                    reader.readAsDataURL(file);
+                });
+            });
+
+            // Wait for all images to be read - 等待所有图片读取完成
+            Promise.all(imagePromises).then(imageUrls => {
+                // Find cat data and update images - 查找猫咪数据并更新图片
+                const cat = catsData.find(c => c.id === catId);
+                if (cat) {
+                    cat.images = imageUrls;
+
+                    // Save to localStorage - 保存到本地存储
+                    try {
+                        localStorage.setItem(`cat-images-${catId}`, JSON.stringify(imageUrls));
+                    } catch (e) {
+                        console.warn('无法保存图片到本地存储:', e);
+                    }
+
+                    // Update display - 更新显示
+                    const imgElement = card.querySelector('.cat-image');
+                    imgElement.src = imageUrls[0];
+
+                    // Update indicator - 更新指示器
+                    const indicator = card.querySelector('.carousel-indicator');
+                    indicator.textContent = `1/${imageUrls.length}`;
+
+                    // Reset carousel index - 重置轮播索引
+                    card.carouselIndex = 0;
+                }
+            }).catch(() => {
+                alert('图片读取失败，请重试');
+            });
+        }
+
+        /**
+         * Setup carousel functionality for a cat card
+         * 为猫咪卡片设置轮播功能
+         * @param {HTMLElement} card - Card element
          * @param {number} catId - Cat ID
          */
-        function processAndDisplayImage(file, imgElement, catId) {
-            const reader = new FileReader();
+        function setupCarousel(card, catId) {
+            const imgElement = card.querySelector('.cat-image');
+            const indicator = card.querySelector('.carousel-indicator');
+            const prevBtn = card.querySelector('.prev-btn');
+            const nextBtn = card.querySelector('.next-btn');
 
-            // Read file and convert to data URL - 读取文件并转换为数据URL
-            reader.onload = (e) => {
-                const imageUrl = e.target.result;
+            // Initialize carousel index - 初始化轮播索引
+            card.carouselIndex = 0;
+            card.carouselInterval = null;
 
-                // Update image source - 更新图片源
-                // CSS object-fit: cover will handle cropping automatically
-                // CSS的object-fit: cover会自动处理裁剪
-                imgElement.src = imageUrl;
+            // Get current cat images - 获取当前猫咪的图片
+            function getCatImages() {
+                const cat = catsData.find(c => c.id === catId);
+                return cat ? cat.images : [];
+            }
 
-                // Store in localStorage for persistence - 存储到本地存储以持久化
-                try {
-                    localStorage.setItem(`cat-image-${catId}`, imageUrl);
-                } catch (e) {
-                    console.warn('无法保存图片到本地存储:', e);
+            // Show image at specific index - 显示指定索引的图片
+            function showImage(index) {
+                const images = getCatImages();
+                if (images.length === 0) return;
+
+                card.carouselIndex = (index + images.length) % images.length;
+                imgElement.src = images[card.carouselIndex];
+                indicator.textContent = `${card.carouselIndex + 1}/${images.length}`;
+            }
+
+            // Navigate to previous image - 切换到上一张
+            function prevImage(event) {
+                event.stopPropagation();
+                stopAutoPlay();
+                showImage(card.carouselIndex - 1);
+                startAutoPlay();
+            }
+
+            // Navigate to next image - 切换到下一张
+            function nextImage(event) {
+                event.stopPropagation();
+                stopAutoPlay();
+                showImage(card.carouselIndex + 1);
+                startAutoPlay();
+            }
+
+            // Start auto play - 开始自动播放
+            function startAutoPlay() {
+                const images = getCatImages();
+                if (images.length <= 1) return;
+
+                stopAutoPlay();
+                card.carouselInterval = setInterval(() => {
+                    showImage(card.carouselIndex + 1);
+                }, 3000);
+            }
+
+            // Stop auto play - 停止自动播放
+            function stopAutoPlay() {
+                if (card.carouselInterval) {
+                    clearInterval(card.carouselInterval);
+                    card.carouselInterval = null;
                 }
-            };
+            }
 
-            reader.onerror = () => {
-                alert('文件读取失败，请重试');
-            };
+            // Add event listeners - 添加事件监听
+            prevBtn.addEventListener('click', prevImage);
+            nextBtn.addEventListener('click', nextImage);
 
-            // Read file as data URL - 读取文件为数据URL
-            reader.readAsDataURL(file);
+            // Start auto play when card is created - 卡片创建时开始自动播放
+            startAutoPlay();
+
+            // Pause on hover - 悬停时暂停
+            card.addEventListener('mouseenter', stopAutoPlay);
+            card.addEventListener('mouseleave', startAutoPlay);
+        }
+
+        /**
+         * Setup edit mode functionality for a cat card
+         * 为猫咪卡片设置编辑模式功能
+         * @param {HTMLElement} card - Card element
+         * @param {Object} cat - Cat data object
+         */
+        function setupEditMode(card, cat) {
+            const editButton = card.querySelector('.edit-button');
+            const catInfo = card.querySelector('.cat-info');
+
+            // Store original data - 存储原始数据
+            let originalData = { ...cat };
+
+            editButton.addEventListener('click', (event) => {
+                event.stopPropagation();
+
+                // Check if already editing - 检查是否已经在编辑
+                if (card.classList.contains('editing')) {
+                    return;
+                }
+
+                // Enter edit mode - 进入编辑模式
+                card.classList.add('editing');
+
+                // Replace display elements with inputs - 用输入框替换显示元素
+                const nameElement = catInfo.querySelector('.cat-name');
+                const breedElement = catInfo.querySelector('.cat-breed');
+                const descElement = catInfo.querySelector('.cat-description');
+                const ageElement = catInfo.querySelector('.stat-value:nth-child(1)');
+                const tagsContainer = catInfo.querySelector('.cat-tags');
+
+                catInfo.innerHTML = `
+                    <input type="text" class="edit-input" value="${cat.name}" data-field="name" placeholder="猫咪名字">
+                    <input type="text" class="edit-input small" value="${cat.breed}" data-field="breed" placeholder="品种">
+                    <input type="text" class="edit-input tiny" value="${cat.description}" data-field="description" placeholder="描述">
+                    <div class="cat-stats">
+                        <div class="stat-item">
+                            <div class="stat-label">年龄</div>
+                            <input type="text" class="edit-input small stat-value" value="${cat.age}" data-field="age" placeholder="年龄">
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">性别</div>
+                            <div class="stat-value">${cat.gender}</div>
+                        </div>
+                    </div>
+                    <input type="text" class="edit-input tiny" value="${cat.tags.join(', ')}" data-field="tags" placeholder="标签（用逗号分隔）">
+                    <div class="edit-actions">
+                        <button class="save-button">💾 保存</button>
+                        <button class="cancel-button">❌ 取消</button>
+                    </div>
+                `;
+
+                // Setup save and cancel buttons - 设置保存和取消按钮
+                const saveBtn = catInfo.querySelector('.save-button');
+                const cancelBtn = catInfo.querySelector('.cancel-button');
+
+                saveBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    saveEdit(card, cat, catInfo);
+                });
+
+                cancelBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    cancelEdit(card, cat, catInfo, originalData);
+                });
+            });
+        }
+
+        /**
+         * Save edited information
+         * 保存编辑的信息
+         * @param {HTMLElement} card - Card element
+         * @param {Object} cat - Cat data object
+         * @param {HTMLElement} catInfo - Cat info element
+         */
+        function saveEdit(card, cat, catInfo) {
+            // Get new values from inputs - 从输入框获取新值
+            const nameInput = catInfo.querySelector('[data-field="name"]');
+            const breedInput = catInfo.querySelector('[data-field="breed"]');
+            const descInput = catInfo.querySelector('[data-field="description"]');
+            const ageInput = catInfo.querySelector('[data-field="age"]');
+            const tagsInput = catInfo.querySelector('[data-field="tags"]');
+
+            // Update cat data - 更新猫咪数据
+            cat.name = nameInput.value.trim() || cat.name;
+            cat.breed = breedInput.value.trim() || cat.breed;
+            cat.description = descInput.value.trim() || cat.description;
+            cat.age = ageInput.value.trim() || cat.age;
+            cat.tags = tagsInput.value.split(',').map(t => t.trim()).filter(t => t);
+
+            // Save to localStorage - 保存到本地存储
+            try {
+                localStorage.setItem(`cat-data-${cat.id}`, JSON.stringify(cat));
+            } catch (e) {
+                console.warn('无法保存数据到本地存储:', e);
+            }
+
+            // Exit edit mode and restore display - 退出编辑模式并恢复显示
+            restoreDisplayMode(card, cat, catInfo);
+        }
+
+        /**
+         * Cancel editing and restore original data
+         * 取消编辑并恢复原始数据
+         * @param {HTMLElement} card - Card element
+         * @param {Object} cat - Cat data object
+         * @param {HTMLElement} catInfo - Cat info element
+         * @param {Object} originalData - Original cat data
+         */
+        function cancelEdit(card, cat, catInfo, originalData) {
+            // Restore original data - 恢复原始数据
+            Object.assign(cat, originalData);
+
+            // Exit edit mode and restore display - 退出编辑模式并恢复显示
+            restoreDisplayMode(card, cat, catInfo);
+        }
+
+        /**
+         * Restore display mode from edit mode
+         * 从编辑模式恢复显示模式
+         * @param {HTMLElement} card - Card element
+         * @param {Object} cat - Cat data object
+         * @param {HTMLElement} catInfo - Cat info element
+         */
+        function restoreDisplayMode(card, cat, catInfo) {
+            // Remove editing class - 移除编辑类
+            card.classList.remove('editing');
+
+            // Restore display HTML - 恢复显示HTML
+            catInfo.innerHTML = `
+                <h2 class="cat-name">${cat.name}</h2>
+                <div class="cat-breed">${cat.breed}</div>
+                <p class="cat-description">${cat.description}</p>
+                <div class="cat-stats">
+                    <div class="stat-item">
+                        <div class="stat-label">年龄</div>
+                        <div class="stat-value">${cat.age}</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">性别</div>
+                        <div class="stat-value">${cat.gender}</div>
+                    </div>
+                </div>
+                <div class="cat-tags">
+                    ${cat.tags.map(tag => `<span class="tag">${tag}</span>`).join('')}
+                </div>
+                <button class="edit-button">✏️ 编辑信息</button>
+            `;
+
+            // Re-setup edit button - 重新设置编辑按钮
+            const editButton = catInfo.querySelector('.edit-button');
+            editButton.addEventListener('click', (event) => {
+                event.stopPropagation();
+                setupEditMode(card, cat);
+                editButton.click();
+            });
         }
 
         /**
@@ -456,26 +877,43 @@
          */
         function loadSavedImages() {
             catsData.forEach(cat => {
-                const savedImage = localStorage.getItem(`cat-image-${cat.id}`);
-                if (savedImage) {
-                    const imgElement = document.querySelector(`.cat-image[data-cat-id="${cat.id}"]`);
-                    if (imgElement) {
-                        imgElement.src = savedImage;
+                // Load multiple images - 加载多张图片
+                const savedImages = localStorage.getItem(`cat-images-${cat.id}`);
+                if (savedImages) {
+                    try {
+                        cat.images = JSON.parse(savedImages);
+                    } catch (e) {
+                        console.warn('无法解析保存的图片数据:', e);
+                    }
+                }
+
+                // Load saved cat data - 加载保存的猫咪数据
+                const savedData = localStorage.getItem(`cat-data-${cat.id}`);
+                if (savedData) {
+                    try {
+                        const data = JSON.parse(savedData);
+                        Object.assign(cat, data);
+                    } catch (e) {
+                        console.warn('无法解析保存的数据:', e);
+                    }
+                }
+
+                // Update display - 更新显示
+                const card = document.querySelector(`.cat-card[data-cat-id="${cat.id}"]`);
+                if (card) {
+                    const imgElement = card.querySelector('.cat-image');
+                    if (imgElement && cat.images[0]) {
+                        imgElement.src = cat.images[0];
+                    }
+
+                    const indicator = card.querySelector('.carousel-indicator');
+                    if (indicator) {
+                        indicator.textContent = `1/${cat.images.length}`;
                     }
                 }
             });
         }
 
-        /**
-         * Handle cat card click event
-         * 处理猫咪卡片点击事件
-         * @param {Object} cat - Cat data object
-         */
-        function handleCardClick(cat) {
-            alert(`你选择了: ${cat.name}\n品种: ${cat.breed}\n${cat.description}`);
-            // In a real application, this could navigate to a detail page
-            // 在实际应用中，这里可以跳转到详情页面
-        }
 
         /**
          * Handle image loading errors
