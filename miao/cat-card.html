@@ -656,19 +656,42 @@
                 // Find cat data and update images - 查找猫咪数据并更新图片
                 const cat = catsData.find(c => c.id === catId);
                 if (cat) {
-                    // Append new images to existing images - 将新图片追加到现有图片列表
-                    cat.images = [...cat.images, ...newImageUrls];
+                    // Check if current images are default (from unsplash) - 检查当前图片是否是默认图片
+                    const hasDefaultImages = cat.images.length === 1 &&
+                                            cat.images[0].includes('unsplash.com');
+
+                    // If has default images, replace them; otherwise append - 如果有默认图片则替换，否则追加
+                    if (hasDefaultImages) {
+                        cat.images = newImageUrls;
+                    } else {
+                        cat.images = [...cat.images, ...newImageUrls];
+                    }
 
                     // Save to localStorage - 保存到本地存储
                     try {
                         localStorage.setItem(`cat-images-${catId}`, JSON.stringify(cat.images));
+                        console.log(`成功保存图片到 cat-images-${catId}，共 ${cat.images.length} 张图片`);
                     } catch (e) {
-                        console.warn('无法保存图片到本地存储:', e);
+                        console.error('无法保存图片到本地存储:', e);
+                        if (e.name === 'QuotaExceededError') {
+                            alert('存储空间不足！图片太大或数量太多。建议：\n1. 选择较小的图片\n2. 减少图片数量\n3. 清理浏览器缓存');
+                        } else {
+                            alert('保存图片失败：' + e.message);
+                        }
                     }
 
                     // Update display to show the first new image - 更新显示，显示第一张新图片
                     const imgElement = card.querySelector('.cat-image');
-                    const currentIndex = cat.images.length - newImageUrls.length;
+                    let currentIndex;
+
+                    if (hasDefaultImages) {
+                        // If replaced default images, show first image - 如果替换了默认图片，显示第一张
+                        currentIndex = 0;
+                    } else {
+                        // If appended, show first new image - 如果是追加，显示第一张新图片
+                        currentIndex = cat.images.length - newImageUrls.length;
+                    }
+
                     imgElement.src = cat.images[currentIndex];
 
                     // Update indicator - 更新指示器
@@ -944,24 +967,29 @@
          */
         function loadSavedImages() {
             catsData.forEach(cat => {
-                // Load multiple images - 加载多张图片
+                // Load saved cat data first - 先加载保存的猫咪数据
+                const savedData = localStorage.getItem(`cat-data-${cat.id}`);
+                if (savedData) {
+                    try {
+                        const data = JSON.parse(savedData);
+                        // Only update non-image fields - 只更新非图片字段
+                        if (data.name) cat.name = data.name;
+                        if (data.breed) cat.breed = data.breed;
+                        if (data.description) cat.description = data.description;
+                        if (data.age) cat.age = data.age;
+                        if (data.tags) cat.tags = data.tags;
+                    } catch (e) {
+                        console.warn('无法解析保存的数据:', e);
+                    }
+                }
+
+                // Load multiple images - 加载多张图片（在数据之后加载，避免被覆盖）
                 const savedImages = localStorage.getItem(`cat-images-${cat.id}`);
                 if (savedImages) {
                     try {
                         cat.images = JSON.parse(savedImages);
                     } catch (e) {
                         console.warn('无法解析保存的图片数据:', e);
-                    }
-                }
-
-                // Load saved cat data - 加载保存的猫咪数据
-                const savedData = localStorage.getItem(`cat-data-${cat.id}`);
-                if (savedData) {
-                    try {
-                        const data = JSON.parse(savedData);
-                        Object.assign(cat, data);
-                    } catch (e) {
-                        console.warn('无法解析保存的数据:', e);
                     }
                 }
 
