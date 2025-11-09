@@ -298,6 +298,7 @@
             }
 
             addLog(`开始上传图片: ${file.name} (${(file.size / 1024).toFixed(2)} KB)`, 'info');
+            addLog(`文件类型: ${file.type}`, 'info');
             setStatus('uploadStatus', '正在上传...', 'info');
 
             try {
@@ -308,8 +309,10 @@
                 const fileName = `test/${timestamp}_${randomStr}.${fileExt}`;
 
                 addLog(`文件路径: ${fileName}`, 'info');
+                addLog(`Bucket: cat-images`, 'info');
 
                 // Upload file - 上传文件
+                addLog('调用 supabase.storage.from("cat-images").upload()...', 'info');
                 const { data, error } = await supabase.storage
                     .from('cat-images')
                     .upload(fileName, file, {
@@ -317,14 +320,22 @@
                         upsert: false
                     });
 
+                addLog('上传请求返回', 'info');
+
                 if (error) {
+                    addLog(`错误对象: ${JSON.stringify(error, null, 2)}`, 'error');
                     throw error;
+                }
+
+                if (data) {
+                    addLog(`上传返回数据: ${JSON.stringify(data, null, 2)}`, 'success');
                 }
 
                 uploadedFilePath = fileName;
                 addLog('✓ 文件上传成功', 'success');
 
                 // Get public URL - 获取公开 URL
+                addLog('获取公开 URL...', 'info');
                 const { data: urlData } = supabase.storage
                     .from('cat-images')
                     .getPublicUrl(fileName);
@@ -339,6 +350,14 @@
                 preview.src = publicUrl;
                 preview.style.display = 'block';
 
+                preview.onload = () => {
+                    addLog('✓ 图片加载成功', 'success');
+                };
+
+                preview.onerror = () => {
+                    addLog('✗ 图片加载失败，可能是 CORS 问题或文件不存在', 'error');
+                };
+
                 // Add delete button - 添加删除按钮
                 const uploadStatus = document.getElementById('uploadStatus');
                 uploadStatus.innerHTML += '<br><button class="button" onclick="deleteUploadedImage()">删除测试图片</button>';
@@ -347,10 +366,16 @@
                 setStatus('uploadStatus', '✗ 上传失败: ' + error.message, 'error');
                 addLog('上传失败: ' + error.message, 'error');
 
+                // Log full error object - 记录完整错误对象
+                addLog('完整错误信息:', 'error');
+                addLog(JSON.stringify(error, null, 2), 'error');
+
                 if (error.message.includes('not found')) {
                     addLog('可能原因: cat-images bucket 不存在', 'error');
-                } else if (error.message.includes('permission')) {
+                } else if (error.message.includes('permission') || error.message.includes('policy')) {
                     addLog('可能原因: Storage 策略未正确配置', 'error');
+                } else if (error.message.includes('already exists')) {
+                    addLog('可能原因: 文件已存在，请刷新页面重试', 'error');
                 }
             }
         }

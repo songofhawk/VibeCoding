@@ -726,6 +726,7 @@
          */
         async function uploadImageToStorage(file, catId) {
             if (!supabaseEnabled || !supabase) {
+                console.error('uploadImageToStorage: Supabase 未启用');
                 throw new Error('Supabase 未启用');
             }
 
@@ -736,7 +737,12 @@
             const fileName = `${timestamp}_${randomStr}.${fileExt}`;
             const filePath = `${catId}/${fileName}`;
 
+            console.log(`uploadImageToStorage: 文件路径 = ${filePath}`);
+            console.log(`uploadImageToStorage: 文件大小 = ${file.size} bytes`);
+            console.log(`uploadImageToStorage: 文件类型 = ${file.type}`);
+
             // Upload file - 上传文件
+            console.log('uploadImageToStorage: 调用 supabase.storage.upload()...');
             const { data, error } = await supabase.storage
                 .from('cat-images')
                 .upload(filePath, file, {
@@ -745,15 +751,22 @@
                 });
 
             if (error) {
+                console.error('uploadImageToStorage: 上传失败', error);
+                console.error('uploadImageToStorage: 错误详情:', JSON.stringify(error, null, 2));
                 throw error;
             }
+
+            console.log('uploadImageToStorage: 上传成功', data);
 
             // Get public URL - 获取公开 URL
             const { data: urlData } = supabase.storage
                 .from('cat-images')
                 .getPublicUrl(filePath);
 
-            return urlData.publicUrl;
+            const publicUrl = urlData.publicUrl;
+            console.log(`uploadImageToStorage: 公开 URL = ${publicUrl}`);
+
+            return publicUrl;
         }
 
         /**
@@ -811,12 +824,26 @@
                 // Try to upload to Supabase Storage first - 优先上传到 Supabase Storage
                 if (supabaseEnabled && supabase) {
                     console.log(`开始上传 ${files.length} 张图片到 Supabase Storage...`);
-                    const uploadPromises = files.map(file => uploadImageToStorage(file, catId));
-                    newImageUrls = await Promise.all(uploadPromises);
-                    console.log(`✓ 成功上传 ${newImageUrls.length} 张图片到 Supabase Storage`);
+                    console.log(`猫咪 ID: ${catId}`);
+                    console.log(`Supabase 状态:`, { enabled: supabaseEnabled, client: !!supabase });
+
+                    try {
+                        const uploadPromises = files.map((file, index) => {
+                            console.log(`准备上传文件 ${index + 1}/${files.length}: ${file.name} (${(file.size / 1024).toFixed(2)} KB)`);
+                            return uploadImageToStorage(file, catId);
+                        });
+                        newImageUrls = await Promise.all(uploadPromises);
+                        console.log(`✓ 成功上传 ${newImageUrls.length} 张图片到 Supabase Storage`);
+                        console.log('上传的 URLs:', newImageUrls);
+                    } catch (uploadError) {
+                        console.error('Supabase Storage 上传失败，详细错误:', uploadError);
+                        console.error('错误堆栈:', uploadError.stack);
+                        throw uploadError;
+                    }
                 } else {
                     // Fallback to localStorage - 降级到 localStorage
                     console.warn('Supabase 未启用，使用 localStorage');
+                    console.warn(`Supabase 状态: enabled=${supabaseEnabled}, client=${!!supabase}`);
                     const imagePromises = files.map(file => {
                         return new Promise((resolve, reject) => {
                             const reader = new FileReader();
@@ -826,6 +853,7 @@
                         });
                     });
                     newImageUrls = await Promise.all(imagePromises);
+                    console.log('使用 localStorage，已转换为 Base64');
                 }
 
                 // Find cat data and update images - 查找猫咪数据并更新图片
