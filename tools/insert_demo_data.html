@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>插入演示数据到 Supabase</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 10px;
+        }
+        .status {
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 5px;
+            font-family: monospace;
+        }
+        .status.info {
+            background: #e3f2fd;
+            border-left: 4px solid #2196f3;
+        }
+        .status.success {
+            background: #e8f5e9;
+            border-left: 4px solid #4caf50;
+        }
+        .status.error {
+            background: #ffebee;
+            border-left: 4px solid #f44336;
+        }
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            font-size: 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 10px 5px;
+        }
+        button:hover {
+            opacity: 0.9;
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .cat-list {
+            margin-top: 20px;
+        }
+        .cat-item {
+            padding: 10px;
+            margin: 5px 0;
+            background: #f9f9f9;
+            border-radius: 5px;
+            display: flex;
+            align-items: center;
+        }
+        .cat-item .icon {
+            margin-right: 10px;
+            font-size: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🐱 插入演示数据到 Supabase</h1>
+
+        <div class="status info">
+            <strong>说明：</strong>此工具将把 index.html 中的 6 只猫咪演示数据插入到 Supabase 数据库中。
+        </div>
+
+        <button id="insertBtn" onclick="insertDemoData()">开始插入数据</button>
+        <button onclick="clearDatabase()">清空数据库</button>
+        <button onclick="viewData()">查看数据库数据</button>
+
+        <div id="output"></div>
+        <div id="catList" class="cat-list"></div>
+    </div>
+
+    <!-- Supabase client library -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <script>
+        // Supabase configuration
+        const SUPABASE_URL = 'https://vswrhnmhumfxgfrwpfwc.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZzd3Jobm1odW1meGdmcndwZndjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI2NDU2NDMsImV4cCI6MjA3ODIyMTY0M30.LRkpH5Wp-w9BOwD-CUJ3Yz9G_5Us0fkjBgKN3zdcL2s';
+
+        // Initialize Supabase client
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        // Demo cat data from index.html
+        const catsData = [
+            {
+                id: 1,
+                name: "小橘",
+                breed: "橘猫",
+                age: 2,
+                sex: 1, // 公
+                description: "性格温顺，喜欢晒太阳，对小鱼干没有抵抗力。是个不折不扣的吃货，看见食物就会喵喵叫。",
+                tags: "温顺,亲人,吃货"
+            },
+            {
+                id: 2,
+                name: "雪球",
+                breed: "英国短毛猫",
+                age: 1,
+                sex: 2, // 母
+                description: "优雅的小公主，毛色雪白纯净，眼睛是漂亮的蓝色。喜欢安静的环境，偶尔会高冷。",
+                tags: "优雅,安静,高冷"
+            },
+            {
+                id: 3,
+                name: "虎斑",
+                breed: "美国短毛猫",
+                age: 3,
+                sex: 1, // 公
+                description: "活力十足的运动健将，喜欢爬高上低，对逗猫棒和激光笔非常感兴趣。",
+                tags: "活泼,好动,爱玩"
+            },
+            {
+                id: 4,
+                name: "布丁",
+                breed: "布偶猫",
+                age: 1.5,
+                sex: 2, // 母
+                description: "拥有深蓝色的眼睛和柔软的长毛，性格温柔体贴，是完美的陪伴型猫咪。",
+                tags: "温柔,粘人,颜值高"
+            },
+            {
+                id: 5,
+                name: "黑炭",
+                breed: "黑猫",
+                age: 4,
+                sex: 1, // 公
+                description: "全身乌黑发亮，眼睛在黑暗中会发出神秘的绿光。性格独立，但对主人非常忠诚。",
+                tags: "独立,忠诚,神秘"
+            },
+            {
+                id: 6,
+                name: "奶茶",
+                breed: "暹罗猫",
+                age: 2.5,
+                sex: 2, // 母
+                description: "拥有独特的重点色花纹和蓝宝石般的眼睛。性格活泼，喜欢与人交流，叫声独特。",
+                tags: "活泼,健谈,聪明"
+            }
+        ];
+
+        function log(message, type = 'info') {
+            const output = document.getElementById('output');
+            const div = document.createElement('div');
+            div.className = `status ${type}`;
+            div.innerHTML = message;
+            output.appendChild(div);
+        }
+
+        async function insertDemoData() {
+            const btn = document.getElementById('insertBtn');
+            btn.disabled = true;
+
+            document.getElementById('output').innerHTML = '';
+            log('开始插入演示数据...', 'info');
+
+            let successCount = 0;
+            let errorCount = 0;
+
+            for (const cat of catsData) {
+                try {
+                    // Check if cat already exists
+                    const { data: existing, error: checkError } = await supabase
+                        .from('cats')
+                        .select('id')
+                        .eq('id', cat.id)
+                        .single();
+
+                    if (existing) {
+                        // Update existing cat
+                        const { error: updateError } = await supabase
+                            .from('cats')
+                            .update({
+                                name: cat.name,
+                                breed: cat.breed,
+                                age: cat.age,
+                                sex: cat.sex,
+                                description: cat.description,
+                                tags: cat.tags,
+                                updated_at: new Date().toISOString()
+                            })
+                            .eq('id', cat.id);
+
+                        if (updateError) {
+                            log(`❌ 更新失败 - ${cat.name}: ${updateError.message}`, 'error');
+                            errorCount++;
+                        } else {
+                            log(`✓ 已更新 - ${cat.name} (ID: ${cat.id})`, 'success');
+                            successCount++;
+                        }
+                    } else {
+                        // Insert new cat
+                        const { error: insertError } = await supabase
+                            .from('cats')
+                            .insert({
+                                id: cat.id,
+                                name: cat.name,
+                                breed: cat.breed,
+                                age: cat.age,
+                                sex: cat.sex,
+                                description: cat.description,
+                                tags: cat.tags
+                            });
+
+                        if (insertError) {
+                            log(`❌ 插入失败 - ${cat.name}: ${insertError.message}`, 'error');
+                            errorCount++;
+                        } else {
+                            log(`✓ 已插入 - ${cat.name} (ID: ${cat.id})`, 'success');
+                            successCount++;
+                        }
+                    }
+                } catch (error) {
+                    log(`❌ 处理失败 - ${cat.name}: ${error.message}`, 'error');
+                    errorCount++;
+                }
+            }
+
+            log(`<br><strong>完成！成功: ${successCount}, 失败: ${errorCount}</strong>`, 'info');
+            btn.disabled = false;
+
+            // Automatically view data after insertion
+            setTimeout(() => viewData(), 1000);
+        }
+
+        async function clearDatabase() {
+            if (!confirm('确定要清空数据库吗？此操作不可恢复！')) {
+                return;
+            }
+
+            document.getElementById('output').innerHTML = '';
+            log('正在清空数据库...', 'info');
+
+            try {
+                const { error } = await supabase
+                    .from('cats')
+                    .delete()
+                    .gte('id', 0); // Delete all records
+
+                if (error) {
+                    log(`❌ 清空失败: ${error.message}`, 'error');
+                } else {
+                    log('✓ 数据库已清空', 'success');
+                    document.getElementById('catList').innerHTML = '';
+                }
+            } catch (error) {
+                log(`❌ 清空失败: ${error.message}`, 'error');
+            }
+        }
+
+        async function viewData() {
+            document.getElementById('catList').innerHTML = '';
+            log('正在加载数据库数据...', 'info');
+
+            try {
+                const { data, error } = await supabase
+                    .from('cats')
+                    .select('*')
+                    .order('id', { ascending: true });
+
+                if (error) {
+                    log(`❌ 加载失败: ${error.message}`, 'error');
+                    return;
+                }
+
+                const catList = document.getElementById('catList');
+
+                if (data.length === 0) {
+                    catList.innerHTML = '<div class="status info">数据库为空</div>';
+                    return;
+                }
+
+                log(`✓ 找到 ${data.length} 条记录`, 'success');
+
+                catList.innerHTML = '<h3>数据库中的猫咪：</h3>';
+
+                data.forEach(cat => {
+                    const genderIcon = cat.sex === 1 ? '♂️' : cat.sex === 2 ? '♀️' : '?';
+                    const div = document.createElement('div');
+                    div.className = 'cat-item';
+                    div.innerHTML = `
+                        <span class="icon">🐱</span>
+                        <strong>${cat.name}</strong>
+                        ${genderIcon}
+                        ${cat.age}岁 -
+                        ${cat.breed} -
+                        ${cat.description.substring(0, 30)}...
+                        <small style="margin-left: 10px; color: #999;">(ID: ${cat.id})</small>
+                    `;
+                    catList.appendChild(div);
+                });
+            } catch (error) {
+                log(`❌ 加载失败: ${error.message}`, 'error');
+            }
+        }
+
+        // Auto-load data on page load
+        window.onload = () => {
+            log('页面已加载，Supabase 客户端已初始化', 'success');
+            viewData();
+        };
+    </script>
+</body>
+</html>

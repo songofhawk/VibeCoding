@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Supabase Storage 测试</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 40px 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+        }
+
+        .test-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+
+        .test-section h2 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 1.2rem;
+        }
+
+        .status {
+            padding: 10px 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .status.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+
+        .button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            margin-right: 10px;
+            margin-bottom: 10px;
+            transition: transform 0.2s;
+        }
+
+        .button:hover {
+            transform: translateY(-2px);
+        }
+
+        .button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .file-input {
+            margin-bottom: 15px;
+        }
+
+        .image-preview {
+            max-width: 100%;
+            max-height: 300px;
+            margin-top: 15px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .log {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            max-height: 300px;
+            overflow-y: auto;
+            margin-top: 15px;
+        }
+
+        .log-entry {
+            margin-bottom: 8px;
+            line-height: 1.5;
+        }
+
+        .log-entry.success {
+            color: #4ec9b0;
+        }
+
+        .log-entry.error {
+            color: #f48771;
+        }
+
+        .log-entry.info {
+            color: #9cdcfe;
+        }
+
+        code {
+            background: #f5f5f5;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🗄️ Supabase Storage 测试</h1>
+        <p class="subtitle">测试 Supabase Storage 图片上传功能</p>
+
+        <!-- 连接测试 -->
+        <div class="test-section">
+            <h2>1. 连接测试</h2>
+            <div id="connectionStatus" class="status info">正在测试连接...</div>
+        </div>
+
+        <!-- Storage Bucket 测试 -->
+        <div class="test-section">
+            <h2>2. Storage Bucket 测试</h2>
+            <button id="testBucketBtn" class="button">测试 Bucket 访问</button>
+            <div id="bucketStatus"></div>
+        </div>
+
+        <!-- 图片上传测试 -->
+        <div class="test-section">
+            <h2>3. 图片上传测试</h2>
+            <input type="file" id="fileInput" accept="image/*" class="file-input">
+            <br>
+            <button id="uploadBtn" class="button" disabled>上传图片</button>
+            <div id="uploadStatus"></div>
+            <img id="imagePreview" class="image-preview" style="display: none;">
+        </div>
+
+        <!-- 数据库表结构测试 -->
+        <div class="test-section">
+            <h2>4. 数据库表结构测试</h2>
+            <button id="testTableBtn" class="button">检查 images 字段</button>
+            <div id="tableStatus"></div>
+        </div>
+
+        <!-- 操作日志 -->
+        <div class="test-section">
+            <h2>操作日志</h2>
+            <div id="log" class="log"></div>
+        </div>
+    </div>
+
+    <!-- Supabase SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <script>
+        // Supabase configuration - Supabase 配置
+        const SUPABASE_URL = 'https://vswrhnmhumfxgfrwpfwc.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZzd3Jobm1odW1meGdmcndwZndjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI2NDU2NDMsImV4cCI6MjA3ODIyMTY0M30.LRkpH5Wp-w9BOwD-CUJ3Yz9G_5Us0fkjBgKN3zdcL2s';
+
+        let supabase = null;
+        let uploadedFilePath = null;
+
+        // Initialize - 初始化
+        function init() {
+            try {
+                supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+                testConnection();
+            } catch (error) {
+                addLog('初始化失败: ' + error.message, 'error');
+                setStatus('connectionStatus', 'Supabase 初始化失败', 'error');
+            }
+        }
+
+        // Test connection - 测试连接
+        async function testConnection() {
+            try {
+                const { data, error } = await supabase.from('cats').select('count').limit(1);
+
+                if (error) {
+                    throw error;
+                }
+
+                setStatus('connectionStatus', '✓ Supabase 连接成功', 'success');
+                addLog('Supabase 客户端初始化成功', 'success');
+                document.getElementById('uploadBtn').disabled = false;
+            } catch (error) {
+                setStatus('connectionStatus', '✗ 连接失败: ' + error.message, 'error');
+                addLog('连接测试失败: ' + error.message, 'error');
+            }
+        }
+
+        // Test bucket access - 测试 Bucket 访问
+        async function testBucket() {
+            addLog('测试 Storage Bucket...', 'info');
+            addLog('注意: anon key 无法列出所有 buckets，这是正常的安全限制', 'info');
+
+            try {
+                // Try to list files in cat-images bucket directly
+                // 直接尝试列出 cat-images bucket 中的文件
+                const { data: files, error: listError } = await supabase.storage
+                    .from('cat-images')
+                    .list('', { limit: 10 });
+
+                if (listError) {
+                    // Check error type - 检查错误类型
+                    if (listError.message.includes('not found') || listError.message.includes('does not exist')) {
+                        setStatus('bucketStatus', '✗ cat-images Bucket 不存在，请先创建', 'error');
+                        addLog('✗ cat-images Bucket 不存在', 'error');
+                        addLog('请在 Supabase Dashboard > Storage 中创建 cat-images bucket', 'info');
+                        addLog('错误详情: ' + listError.message, 'error');
+                    } else if (listError.message.includes('permission') || listError.message.includes('policy')) {
+                        setStatus('bucketStatus', '⚠️ Bucket 存在但缺少访问策略', 'error');
+                        addLog('⚠️ cat-images Bucket 存在但权限配置不正确', 'error');
+                        addLog('请在 SQL Editor 中执行 Storage 策略配置', 'info');
+                        addLog('错误详情: ' + listError.message, 'error');
+                    } else {
+                        throw listError;
+                    }
+                    return;
+                }
+
+                // Success - 成功
+                setStatus('bucketStatus', '✓ cat-images Bucket 已创建并可访问', 'success');
+                addLog('✓ cat-images Bucket 存在且可访问', 'success');
+                addLog(`✓ Bucket 中有 ${files.length} 个文件/文件夹`, 'info');
+
+                // Show some file info if exists - 显示文件信息
+                if (files.length > 0) {
+                    addLog('文件列表:', 'info');
+                    files.slice(0, 5).forEach(file => {
+                        addLog(`  - ${file.name} (${file.id || 'folder'})`, 'info');
+                    });
+                    if (files.length > 5) {
+                        addLog(`  ... 还有 ${files.length - 5} 个文件`, 'info');
+                    }
+                } else {
+                    addLog('Bucket 是空的（这是正常的）', 'info');
+                }
+
+            } catch (error) {
+                setStatus('bucketStatus', '✗ 测试失败: ' + error.message, 'error');
+                addLog('Bucket 测试失败: ' + error.message, 'error');
+                addLog('请检查:', 'info');
+                addLog('1. Bucket 名称是否为 cat-images', 'info');
+                addLog('2. Bucket 是否设置为 Public', 'info');
+                addLog('3. Storage 策略是否已配置', 'info');
+            }
+        }
+
+        // Upload image - 上传图片
+        async function uploadImage() {
+            const fileInput = document.getElementById('fileInput');
+            const file = fileInput.files[0];
+
+            if (!file) {
+                alert('请先选择一个图片文件');
+                return;
+            }
+
+            addLog(`开始上传图片: ${file.name} (${(file.size / 1024).toFixed(2)} KB)`, 'info');
+            addLog(`文件类型: ${file.type}`, 'info');
+            setStatus('uploadStatus', '正在上传...', 'info');
+
+            try {
+                // Generate unique filename - 生成唯一文件名
+                const timestamp = Date.now();
+                const fileExt = file.name.split('.').pop();
+                const randomStr = Math.random().toString(36).substring(7);
+                const fileName = `test/${timestamp}_${randomStr}.${fileExt}`;
+
+                addLog(`文件路径: ${fileName}`, 'info');
+                addLog(`Bucket: cat-images`, 'info');
+
+                // Upload file - 上传文件
+                addLog('调用 supabase.storage.from("cat-images").upload()...', 'info');
+                const { data, error } = await supabase.storage
+                    .from('cat-images')
+                    .upload(fileName, file, {
+                        cacheControl: '3600',
+                        upsert: false
+                    });
+
+                addLog('上传请求返回', 'info');
+
+                if (error) {
+                    addLog(`错误对象: ${JSON.stringify(error, null, 2)}`, 'error');
+                    throw error;
+                }
+
+                if (data) {
+                    addLog(`上传返回数据: ${JSON.stringify(data, null, 2)}`, 'success');
+                }
+
+                uploadedFilePath = fileName;
+                addLog('✓ 文件上传成功', 'success');
+
+                // Get public URL - 获取公开 URL
+                addLog('获取公开 URL...', 'info');
+                const { data: urlData } = supabase.storage
+                    .from('cat-images')
+                    .getPublicUrl(fileName);
+
+                const publicUrl = urlData.publicUrl;
+                addLog(`公开 URL: ${publicUrl}`, 'success');
+
+                setStatus('uploadStatus', '✓ 上传成功！', 'success');
+
+                // Show preview - 显示预览
+                const preview = document.getElementById('imagePreview');
+                preview.src = publicUrl;
+                preview.style.display = 'block';
+
+                preview.onload = () => {
+                    addLog('✓ 图片加载成功', 'success');
+                };
+
+                preview.onerror = () => {
+                    addLog('✗ 图片加载失败，可能是 CORS 问题或文件不存在', 'error');
+                };
+
+                // Add delete button - 添加删除按钮
+                const uploadStatus = document.getElementById('uploadStatus');
+                uploadStatus.innerHTML += '<br><button class="button" onclick="deleteUploadedImage()">删除测试图片</button>';
+
+            } catch (error) {
+                setStatus('uploadStatus', '✗ 上传失败: ' + error.message, 'error');
+                addLog('上传失败: ' + error.message, 'error');
+
+                // Log full error object - 记录完整错误对象
+                addLog('完整错误信息:', 'error');
+                addLog(JSON.stringify(error, null, 2), 'error');
+
+                if (error.message.includes('not found')) {
+                    addLog('可能原因: cat-images bucket 不存在', 'error');
+                } else if (error.message.includes('permission') || error.message.includes('policy')) {
+                    addLog('可能原因: Storage 策略未正确配置', 'error');
+                } else if (error.message.includes('already exists')) {
+                    addLog('可能原因: 文件已存在，请刷新页面重试', 'error');
+                }
+            }
+        }
+
+        // Delete uploaded image - 删除上传的图片
+        async function deleteUploadedImage() {
+            if (!uploadedFilePath) {
+                alert('没有要删除的图片');
+                return;
+            }
+
+            addLog(`删除图片: ${uploadedFilePath}`, 'info');
+
+            try {
+                const { error } = await supabase.storage
+                    .from('cat-images')
+                    .remove([uploadedFilePath]);
+
+                if (error) {
+                    throw error;
+                }
+
+                addLog('✓ 图片删除成功', 'success');
+                document.getElementById('imagePreview').style.display = 'none';
+                uploadedFilePath = null;
+                setStatus('uploadStatus', '✓ 测试图片已删除', 'success');
+
+            } catch (error) {
+                addLog('删除失败: ' + error.message, 'error');
+            }
+        }
+
+        // Test table structure - 测试表结构
+        async function testTable() {
+            addLog('检查数据库表结构...', 'info');
+
+            try {
+                // Try to query with images field - 尝试查询 images 字段
+                const { data, error } = await supabase
+                    .from('cats')
+                    .select('id, name, images')
+                    .limit(3);
+
+                if (error) {
+                    throw error;
+                }
+
+                setStatus('tableStatus', '✓ images 字段存在且可访问', 'success');
+                addLog('✓ images 字段已正确添加到 cats 表', 'success');
+                addLog(`查询到 ${data.length} 条记录`, 'info');
+
+                // Show sample data - 显示示例数据
+                data.forEach(cat => {
+                    const imageCount = cat.images ? cat.images.length : 0;
+                    addLog(`猫咪 #${cat.id} (${cat.name}): ${imageCount} 张图片`, 'info');
+                });
+
+            } catch (error) {
+                setStatus('tableStatus', '✗ 检查失败: ' + error.message, 'error');
+                addLog('表结构检查失败: ' + error.message, 'error');
+
+                if (error.message.includes('column') && error.message.includes('images')) {
+                    addLog('可能原因: images 字段不存在', 'error');
+                    addLog('请运行 SQL: ALTER TABLE public.cats ADD COLUMN images text[];', 'info');
+                }
+            }
+        }
+
+        // Helper functions - 辅助函数
+        function setStatus(elementId, message, type) {
+            const element = document.getElementById(elementId);
+            element.textContent = message;
+            element.className = 'status ' + type;
+        }
+
+        function addLog(message, type = 'info') {
+            const log = document.getElementById('log');
+            const entry = document.createElement('div');
+            entry.className = 'log-entry ' + type;
+            const timestamp = new Date().toLocaleTimeString();
+            entry.textContent = `[${timestamp}] ${message}`;
+            log.appendChild(entry);
+            log.scrollTop = log.scrollHeight;
+        }
+
+        // Event listeners - 事件监听
+        document.getElementById('testBucketBtn').addEventListener('click', testBucket);
+        document.getElementById('uploadBtn').addEventListener('click', uploadImage);
+        document.getElementById('testTableBtn').addEventListener('click', testTable);
+
+        // Initialize on load - 页面加载时初始化
+        window.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
