@@ -439,7 +439,33 @@
     <!-- GIF generation library - using gifshot which doesn't require external workers -->
     <script src="https://cdn.jsdelivr.net/npm/gifshot@0.4.5/dist/gifshot.min.js"></script>
 
+    <!-- Supabase client library - Supabase 客户端库 -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
     <script>
+        // Supabase configuration - Supabase 配置
+        // TODO: 请在 Supabase Dashboard > Settings > API 中获取正确的 anon key
+        // 参考 supabase-config-guide.md 文件获取详细步骤
+        const SUPABASE_URL = 'https://vswrhnmhumfxgfrwpfwc.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZzd3Jobm1odW1meGdmcndwZndjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI2NDU2NDMsImV4cCI6MjA3ODIyMTY0M30.LRkpH5Wp-w9BOwD-CUJ3Yz9G_5Us0fkjBgKN3zdcL2s'; // 请替换为实际的 anon key
+
+        // Initialize Supabase client - 初始化 Supabase 客户端
+        let supabase = null;
+        let supabaseEnabled = false;
+
+        try {
+            if (SUPABASE_ANON_KEY !== 'YOUR_SUPABASE_ANON_KEY_HERE') {
+                supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+                supabaseEnabled = true;
+                console.log('✓ Supabase 客户端已初始化');
+            } else {
+                console.warn('⚠ Supabase 未配置，请在代码中设置 SUPABASE_ANON_KEY');
+                console.warn('参考 supabase-config-guide.md 获取配置方法');
+            }
+        } catch (error) {
+            console.error('Supabase 初始化失败:', error);
+        }
+
         // Sample cat data - 示例猫咪数据
         const catsData = [
             {
@@ -511,11 +537,65 @@
         ];
 
         /**
+         * Load cats from database
+         * 从数据库加载猫咪数据
+         * @returns {Promise<Array>} - Array of cat data
+         */
+        async function loadCatsFromDatabase() {
+            // Check if Supabase is enabled - 检查是否启用了 Supabase
+            if (!supabaseEnabled || !supabase) {
+                console.warn('Supabase 未启用，使用默认数据');
+                return null;
+            }
+
+            try {
+                const { data, error } = await supabase
+                    .from('cats')
+                    .select('*')
+                    .order('id', { ascending: true });
+
+                if (error) {
+                    console.error('从数据库加载失败:', error);
+                    return null;
+                }
+
+                // Convert database format to app format - 转换数据库格式到应用格式
+                return data.map(dbCat => ({
+                    id: dbCat.id,
+                    name: dbCat.name,
+                    breed: dbCat.breed || '未知品种',
+                    age: dbCat.age ? `${dbCat.age}岁` : '未知',
+                    gender: dbCat.sex === 1 ? '公' : dbCat.sex === 2 ? '母' : '未知',
+                    description: dbCat.description || '暂无描述',
+                    images: ["https://images.unsplash.com/photo-1574158622682-e40e69881006?w=500&h=400&fit=crop"],
+                    badge: '数据库',
+                    tags: dbCat.tags ? dbCat.tags.split(',').map(t => t.trim()).filter(t => t) : []
+                }));
+            } catch (error) {
+                console.error('加载数据时出错:', error);
+                return null;
+            }
+        }
+
+        /**
          * Initialize the cat cards display
          * 初始化猫咪卡片展示
          */
-        function initCatCards() {
+        async function initCatCards() {
             const container = document.getElementById('cardsContainer');
+
+            // Load cats from database - 从数据库加载猫咪
+            const dbCats = await loadCatsFromDatabase();
+
+            // If database load successful, use database data; otherwise use default data
+            // 如果数据库加载成功,使用数据库数据;否则使用默认数据
+            if (dbCats && dbCats.length > 0) {
+                catsData.length = 0; // Clear default data
+                catsData.push(...dbCats);
+                console.log(`从数据库加载了 ${dbCats.length} 只猫咪`);
+            } else {
+                console.log('使用默认数据');
+            }
 
             // Simulate loading delay - 模拟加载延迟
             setTimeout(() => {
@@ -872,13 +952,79 @@
         }
 
         /**
+         * Save cat data to Supabase database
+         * 将猫咪数据保存到 Supabase 数据库
+         * @param {Object} cat - Cat data object
+         * @returns {Promise<boolean>} - Success status
+         */
+        async function saveCatToDatabase(cat) {
+            // Check if Supabase is enabled - 检查是否启用了 Supabase
+            if (!supabaseEnabled || !supabase) {
+                console.warn('Supabase 未启用，跳过数据库保存');
+                return false;
+            }
+
+            try {
+                // Map gender to database format (公=1, 母=2)
+                const sexValue = cat.gender === '公' ? 1 : cat.gender === '母' ? 2 : null;
+
+                // Parse age number from string like "2岁"
+                const ageValue = parseInt(cat.age) || null;
+
+                // Prepare data for database - 准备数据库数据
+                const catData = {
+                    name: cat.name,
+                    breed: cat.breed,
+                    age: ageValue,
+                    sex: sexValue,
+                    description: cat.description,
+                    tags: cat.tags.join(','),
+                    updated_at: new Date().toISOString()
+                };
+
+                // Check if cat exists in database - 检查猫咪是否存在于数据库
+                const { data: existingCat, error: fetchError } = await supabase
+                    .from('cats')
+                    .select('id')
+                    .eq('id', cat.id)
+                    .single();
+
+                let result;
+                if (existingCat) {
+                    // Update existing cat - 更新现有猫咪
+                    result = await supabase
+                        .from('cats')
+                        .update(catData)
+                        .eq('id', cat.id);
+                } else {
+                    // Insert new cat - 插入新猫咪
+                    catData.id = cat.id;
+                    result = await supabase
+                        .from('cats')
+                        .insert(catData);
+                }
+
+                if (result.error) {
+                    console.error('数据库保存失败:', result.error);
+                    return false;
+                }
+
+                console.log('成功保存到数据库:', cat.name);
+                return true;
+            } catch (error) {
+                console.error('保存到数据库时出错:', error);
+                return false;
+            }
+        }
+
+        /**
          * Save edited information
          * 保存编辑的信息
          * @param {HTMLElement} card - Card element
          * @param {Object} cat - Cat data object
          * @param {HTMLElement} catInfo - Cat info element
          */
-        function saveEdit(card, cat, catInfo) {
+        async function saveEdit(card, cat, catInfo) {
             // Get new values from inputs - 从输入框获取新值
             const nameInput = catInfo.querySelector('[data-field="name"]');
             const breedInput = catInfo.querySelector('[data-field="breed"]');
@@ -893,11 +1039,21 @@
             cat.age = ageInput.value.trim() || cat.age;
             cat.tags = tagsInput.value.split(',').map(t => t.trim()).filter(t => t);
 
-            // Save to localStorage - 保存到本地存储
+            // Save to database - 保存到数据库
+            const dbSuccess = await saveCatToDatabase(cat);
+
+            // Save to localStorage as backup - 保存到本地存储作为备份
             try {
                 localStorage.setItem(`cat-data-${cat.id}`, JSON.stringify(cat));
             } catch (e) {
                 console.warn('无法保存数据到本地存储:', e);
+            }
+
+            // Show success message - 显示成功消息
+            if (dbSuccess) {
+                console.log('✓ 数据已保存到数据库');
+            } else {
+                console.warn('⚠ 数据库保存失败,仅保存到本地');
             }
 
             // Exit edit mode and restore display - 退出编辑模式并恢复显示
