@@ -1,0 +1,14 @@
+{
+  "name": "miao-universe",
+  "version": "1.0.0",
+  "description": "喵宇宙 - 猫咪展示平台",
+  "main": "index.html",
+  "type": "module",
+  "scripts": {
+    "dev": "vercel dev",
+    "deploy": "vercel --prod"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.39.0"
+  }
+}

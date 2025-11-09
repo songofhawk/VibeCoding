@@ -1,0 +1,1108 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>喵宇宙 - 猫咪展示卡片</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            width: 100%;
+        }
+
+        .title {
+            text-align: center;
+            color: white;
+            font-size: 2.5rem;
+            margin-bottom: 40px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .cards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 30px;
+            padding: 20px;
+        }
+
+        /* Cat card styling */
+        .cat-card {
+            background: white;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            cursor: pointer;
+        }
+
+        .cat-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .cat-image-container {
+            width: 100%;
+            height: 250px;
+            overflow: hidden;
+            background: #f5f5f5;
+            position: relative;
+        }
+
+        .cat-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.3s ease;
+        }
+
+        .cat-card:hover .cat-image {
+            transform: scale(1.1);
+        }
+
+        .cat-badge {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Photo upload button styling */
+        .upload-button {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(102, 126, 234, 0.95);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 25px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            z-index: 20;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            pointer-events: none;
+        }
+
+        .upload-button:hover {
+            background: rgba(102, 126, 234, 1);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+        }
+
+        .cat-image-container:hover .upload-button {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .cat-image-container:hover::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.4);
+            z-index: 5;
+        }
+
+        /* Hide file input */
+        .file-input {
+            display: none;
+        }
+
+        /* GIF generation button */
+        .gif-button {
+            position: absolute;
+            bottom: 15px;
+            right: 15px;
+            background: rgba(255, 255, 255, 0.8);
+            border: none;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            z-index: 10;
+            opacity: 0.6;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+        }
+
+        .gif-button:hover {
+            opacity: 1;
+            background: rgba(255, 255, 255, 0.95);
+            transform: scale(1.1);
+        }
+
+        .gif-button.generating {
+            background: rgba(102, 126, 234, 0.9);
+            color: white;
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 0.6; }
+            50% { opacity: 1; }
+        }
+
+        /* Carousel controls */
+        .carousel-nav {
+            position: absolute;
+            top: 50%;
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            padding: 0 10px;
+            transform: translateY(-50%);
+            z-index: 15;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            pointer-events: none;
+        }
+
+        .cat-image-container:hover .carousel-nav {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .carousel-btn {
+            background: rgba(255, 255, 255, 0.9);
+            border: none;
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .carousel-btn:hover {
+            background: white;
+            transform: scale(1.1);
+        }
+
+        .carousel-indicator {
+            position: absolute;
+            bottom: 15px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.6);
+            color: white;
+            padding: 5px 12px;
+            border-radius: 15px;
+            font-size: 0.8rem;
+            z-index: 15;
+        }
+
+        /* Edit button */
+        .edit-button {
+            display: block;
+            width: 100%;
+            padding: 10px;
+            margin-top: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .edit-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        /* Edit mode styling */
+        .cat-card.editing {
+            border: 3px solid #667eea;
+            box-shadow: 0 15px 40px rgba(102, 126, 234, 0.3);
+        }
+
+        .cat-card.editing .cat-card:hover {
+            transform: none;
+        }
+
+        .edit-input {
+            width: 100%;
+            padding: 8px 12px;
+            border: 2px solid #667eea;
+            border-radius: 8px;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 10px;
+            background: #f8f9ff;
+        }
+
+        .edit-input:focus {
+            outline: none;
+            border-color: #764ba2;
+            background: white;
+        }
+
+        .edit-input.small {
+            font-size: 1.1rem;
+            font-weight: 400;
+        }
+
+        .edit-input.tiny {
+            font-size: 0.9rem;
+        }
+
+        .stat-item input.edit-input {
+            width: 100%;
+            padding: 5px 8px;
+            text-align: center;
+        }
+
+        .edit-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .edit-actions button {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 10px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .save-button {
+            background: #28a745;
+            color: white;
+        }
+
+        .save-button:hover {
+            background: #218838;
+            transform: translateY(-2px);
+        }
+
+        .cancel-button {
+            background: #6c757d;
+            color: white;
+        }
+
+        .cancel-button:hover {
+            background: #5a6268;
+            transform: translateY(-2px);
+        }
+
+        .cat-info {
+            padding: 20px;
+        }
+
+        .cat-name {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .cat-breed {
+            color: #667eea;
+            font-size: 0.95rem;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+
+        .cat-description {
+            color: #666;
+            font-size: 0.9rem;
+            line-height: 1.6;
+            margin-bottom: 15px;
+        }
+
+        .cat-stats {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .stat-item {
+            flex: 1;
+            text-align: center;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+
+        .stat-label {
+            font-size: 0.75rem;
+            color: #999;
+            margin-bottom: 5px;
+        }
+
+        .stat-value {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #333;
+        }
+
+        .cat-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .tag {
+            padding: 5px 12px;
+            background: #e9ecef;
+            color: #495057;
+            border-radius: 15px;
+            font-size: 0.8rem;
+        }
+
+        /* Loading animation */
+        .loading {
+            text-align: center;
+            color: white;
+            font-size: 1.2rem;
+        }
+
+        .loading-spinner {
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-top: 4px solid white;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Responsive design */
+        @media (max-width: 768px) {
+            .title {
+                font-size: 2rem;
+            }
+
+            .cards-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="title">🐱 喵宇宙 </h1>
+        <div id="cardsContainer" class="cards-grid">
+            <div class="loading">
+                <div class="loading-spinner"></div>
+                <p>加载中...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- GIF generation library -->
+    <script src="https://cdn.jsdelivr.net/npm/gifshot@0.4.5/dist/gifshot.min.js"></script>
+
+    <script>
+        // API base URL - API 基础 URL
+        const API_BASE_URL = window.location.hostname === 'localhost'
+            ? 'http://localhost:3000/api'
+            : '/api';
+
+        // In-memory cat data cache - 内存中的猫咪数据缓存
+        let catsData = [];
+
+        /**
+         * Fetch all cats from the API
+         * 从 API 获取所有猫咪数据
+         */
+        async function fetchCats() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/cats`);
+                const result = await response.json();
+
+                if (result.success) {
+                    // Transform database format to frontend format
+                    // 将数据库格式转换为前端格式
+                    catsData = result.data.map(cat => ({
+                        id: cat.id,
+                        name: cat.name,
+                        breed: cat.breed || '未知品种',
+                        age: cat.age ? `${cat.age}岁` : '未知',
+                        gender: cat.sex === 1 ? '公' : cat.sex === 2 ? '母' : '未知',
+                        sex: cat.sex,
+                        description: cat.description || '暂无描述',
+                        images: cat.tags && cat.tags.startsWith('http') ? [cat.tags] : ['https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?w=500&h=400&fit=crop'],
+                        badge: '喵星人',
+                        tags: cat.tags && !cat.tags.startsWith('http') ? cat.tags.split(',') : ['可爱']
+                    }));
+                } else {
+                    console.error('Failed to fetch cats:', result.error);
+                    // Use default data if API fails
+                    // 如果 API 失败则使用默认数据
+                    catsData = getDefaultCats();
+                }
+            } catch (error) {
+                console.error('Error fetching cats:', error);
+                // Use default data if API fails
+                // 如果 API 失败则使用默认数据
+                catsData = getDefaultCats();
+            }
+        }
+
+        /**
+         * Get default cat data
+         * 获取默认猫咪数据
+         */
+        function getDefaultCats() {
+            return [
+                {
+                    id: 1,
+                    name: "小橘",
+                    breed: "橘猫",
+                    age: "2岁",
+                    gender: "公",
+                    sex: 1,
+                    description: "性格温顺，喜欢晒太阳，对小鱼干没有抵抗力。",
+                    images: ["https://images.unsplash.com/photo-1574158622682-e40e69881006?w=500&h=400&fit=crop"],
+                    badge: "最受欢迎",
+                    tags: ["温顺", "亲人", "吃货"]
+                },
+                {
+                    id: 2,
+                    name: "雪球",
+                    breed: "英国短毛猫",
+                    age: "1岁",
+                    gender: "母",
+                    sex: 2,
+                    description: "优雅的小公主，毛色雪白纯净。",
+                    images: ["https://images.unsplash.com/photo-1513360371669-4adf3dd7dff8?w=500&h=400&fit=crop"],
+                    badge: "新成员",
+                    tags: ["优雅", "安静", "高冷"]
+                },
+                {
+                    id: 3,
+                    name: "虎斑",
+                    breed: "美国短毛猫",
+                    age: "3岁",
+                    gender: "公",
+                    sex: 1,
+                    description: "活力十足的运动健将。",
+                    images: ["https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?w=500&h=400&fit=crop"],
+                    badge: "活力之星",
+                    tags: ["活泼", "好动", "爱玩"]
+                }
+            ];
+        }
+
+        /**
+         * Save cat data to API
+         * 保存猫咪数据到 API
+         */
+        async function saveCatData(cat) {
+            try {
+                const response = await fetch(`${API_BASE_URL}/cats`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        id: cat.id,
+                        name: cat.name,
+                        breed: cat.breed,
+                        age: parseInt(cat.age) || 0,
+                        sex: cat.sex || (cat.gender === '公' ? 1 : cat.gender === '母' ? 2 : 0),
+                        description: cat.description,
+                        tags: Array.isArray(cat.tags) ? cat.tags.join(',') : cat.tags
+                    })
+                });
+
+                const result = await response.json();
+
+                if (!result.success) {
+                    console.error('Failed to save cat data:', result.error);
+                    alert('保存失败: ' + result.error);
+                    return false;
+                }
+
+                return true;
+            } catch (error) {
+                console.error('Error saving cat data:', error);
+                alert('保存失败: ' + error.message);
+                return false;
+            }
+        }
+
+        /**
+         * Upload image to API
+         * 上传图片到 API
+         */
+        async function uploadImage(catId, base64Image) {
+            try {
+                const response = await fetch(`${API_BASE_URL}/upload`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        catId: catId,
+                        image: base64Image
+                    })
+                });
+
+                const result = await response.json();
+
+                if (!result.success) {
+                    console.error('Failed to upload image:', result.error);
+                    return null;
+                }
+
+                return result.url;
+            } catch (error) {
+                console.error('Error uploading image:', error);
+                return null;
+            }
+        }
+
+        /**
+         * Initialize the cat cards display
+         * 初始化猫咪卡片展示
+         */
+        async function initCatCards() {
+            const container = document.getElementById('cardsContainer');
+
+            // Fetch cats from API
+            // 从 API 获取猫咪数据
+            await fetchCats();
+
+            // Render cards
+            // 渲染卡片
+            setTimeout(() => {
+                container.innerHTML = '';
+
+                catsData.forEach(cat => {
+                    const card = createCatCard(cat);
+                    container.appendChild(card);
+                });
+            }, 500);
+        }
+
+        /**
+         * Create a single cat card element
+         * 创建单个猫咪卡片元素
+         */
+        function createCatCard(cat) {
+            const card = document.createElement('div');
+            card.className = 'cat-card';
+            card.setAttribute('data-cat-id', cat.id);
+
+            card.innerHTML = `
+                <div class="cat-image-container">
+                    <img src="${cat.images[0]}" alt="${cat.name}" class="cat-image" data-cat-id="${cat.id}">
+                    <div class="cat-badge">${cat.badge}</div>
+                    <button class="upload-button" data-cat-id="${cat.id}">📷 选择照片</button>
+                    <input type="file" class="file-input" accept="image/*" multiple data-cat-id="${cat.id}">
+                    <button class="gif-button" data-cat-id="${cat.id}" title="生成轮播GIF">🎬</button>
+                    <div class="carousel-nav">
+                        <button class="carousel-btn prev-btn">‹</button>
+                        <button class="carousel-btn next-btn">›</button>
+                    </div>
+                    <div class="carousel-indicator">1/${cat.images.length}</div>
+                </div>
+                <div class="cat-info">
+                    <h2 class="cat-name">${cat.name}</h2>
+                    <div class="cat-breed">${cat.breed}</div>
+                    <p class="cat-description">${cat.description}</p>
+                    <div class="cat-stats">
+                        <div class="stat-item">
+                            <div class="stat-label">年龄</div>
+                            <div class="stat-value">${cat.age}</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">性别</div>
+                            <div class="stat-value">${cat.gender}</div>
+                        </div>
+                    </div>
+                    <div class="cat-tags">
+                        ${cat.tags.map(tag => `<span class="tag">${tag}</span>`).join('')}
+                    </div>
+                    <button class="edit-button">✏️ 编辑信息</button>
+                </div>
+            `;
+
+            setupPhotoUpload(card, cat.id);
+            setupCarousel(card, cat.id);
+            setupEditMode(card, cat);
+            setupGifGeneration(card, cat.id);
+
+            return card;
+        }
+
+        /**
+         * Setup photo upload functionality
+         * 设置照片上传功能
+         */
+        function setupPhotoUpload(card, catId) {
+            const uploadButton = card.querySelector('.upload-button');
+            const fileInput = card.querySelector('.file-input');
+
+            uploadButton.addEventListener('click', (event) => {
+                event.stopPropagation();
+                fileInput.click();
+            });
+
+            fileInput.addEventListener('change', (event) => {
+                const files = Array.from(event.target.files);
+
+                if (files.length === 0) {
+                    return;
+                }
+
+                const validFiles = files.filter(file => file.type.startsWith('image/'));
+
+                if (validFiles.length === 0) {
+                    alert('请选择有效的图片文件');
+                    return;
+                }
+
+                processMultipleImages(validFiles, catId, card);
+            });
+        }
+
+        /**
+         * Process multiple uploaded images
+         * 处理多张上传的图片
+         */
+        async function processMultipleImages(files, catId, card) {
+            const uploadButton = card.querySelector('.upload-button');
+            uploadButton.textContent = '上传中...';
+            uploadButton.disabled = true;
+
+            try {
+                const imagePromises = files.map(file => {
+                    return new Promise((resolve, reject) => {
+                        const reader = new FileReader();
+                        reader.onload = (e) => resolve(e.target.result);
+                        reader.onerror = reject;
+                        reader.readAsDataURL(file);
+                    });
+                });
+
+                const newImageUrls = await Promise.all(imagePromises);
+
+                // Upload images to server
+                // 上传图片到服务器
+                const uploadedUrls = await Promise.all(
+                    newImageUrls.map(base64 => uploadImage(catId, base64))
+                );
+
+                // Filter out failed uploads
+                // 过滤掉上传失败的
+                const successfulUrls = uploadedUrls.filter(url => url !== null);
+
+                if (successfulUrls.length === 0) {
+                    alert('图片上传失败，请重试');
+                    uploadButton.textContent = '📷 选择照片';
+                    uploadButton.disabled = false;
+                    return;
+                }
+
+                // Update cat images
+                // 更新猫咪图片
+                const cat = catsData.find(c => c.id === catId);
+                if (cat) {
+                    const hasDefaultImages = cat.images.length === 1 && cat.images[0].includes('unsplash.com');
+
+                    if (hasDefaultImages) {
+                        cat.images = successfulUrls;
+                    } else {
+                        cat.images = [...cat.images, ...successfulUrls];
+                    }
+
+                    // Update display
+                    // 更新显示
+                    const imgElement = card.querySelector('.cat-image');
+                    const currentIndex = hasDefaultImages ? 0 : cat.images.length - successfulUrls.length;
+                    imgElement.src = cat.images[currentIndex];
+
+                    const indicator = card.querySelector('.carousel-indicator');
+                    indicator.textContent = `${currentIndex + 1}/${cat.images.length}`;
+
+                    card.carouselIndex = currentIndex;
+
+                    if (card.carouselInterval) {
+                        clearInterval(card.carouselInterval);
+                    }
+
+                    if (cat.images.length > 1) {
+                        startCarouselAutoPlay(card, catId);
+                    }
+
+                    alert(`成功上传 ${successfulUrls.length} 张图片`);
+                }
+            } catch (error) {
+                console.error('图片处理错误:', error);
+                alert('图片处理失败，请重试');
+            } finally {
+                uploadButton.textContent = '📷 选择照片';
+                uploadButton.disabled = false;
+            }
+        }
+
+        /**
+         * Setup carousel functionality
+         * 设置轮播功能
+         */
+        function setupCarousel(card, catId) {
+            const imgElement = card.querySelector('.cat-image');
+            const indicator = card.querySelector('.carousel-indicator');
+            const prevBtn = card.querySelector('.prev-btn');
+            const nextBtn = card.querySelector('.next-btn');
+
+            card.carouselIndex = 0;
+            card.carouselInterval = null;
+
+            function getCatImages() {
+                const cat = catsData.find(c => c.id === catId);
+                return cat ? cat.images : [];
+            }
+
+            function showImage(index) {
+                const images = getCatImages();
+                if (images.length === 0) return;
+
+                card.carouselIndex = (index + images.length) % images.length;
+                imgElement.src = images[card.carouselIndex];
+                indicator.textContent = `${card.carouselIndex + 1}/${images.length}`;
+            }
+
+            function prevImage(event) {
+                event.stopPropagation();
+                stopCarouselAutoPlay(card);
+                showImage(card.carouselIndex - 1);
+                startCarouselAutoPlay(card, catId);
+            }
+
+            function nextImage(event) {
+                event.stopPropagation();
+                stopCarouselAutoPlay(card);
+                showImage(card.carouselIndex + 1);
+                startCarouselAutoPlay(card, catId);
+            }
+
+            prevBtn.addEventListener('click', prevImage);
+            nextBtn.addEventListener('click', nextImage);
+
+            startCarouselAutoPlay(card, catId);
+
+            card.addEventListener('mouseenter', () => stopCarouselAutoPlay(card));
+            card.addEventListener('mouseleave', () => startCarouselAutoPlay(card, catId));
+        }
+
+        /**
+         * Start carousel auto play
+         * 开始轮播自动播放
+         */
+        function startCarouselAutoPlay(card, catId) {
+            const cat = catsData.find(c => c.id === catId);
+            if (!cat || cat.images.length <= 1) return;
+
+            stopCarouselAutoPlay(card);
+
+            card.carouselInterval = setInterval(() => {
+                const images = cat.images;
+                if (images.length > 0) {
+                    card.carouselIndex = (card.carouselIndex + 1) % images.length;
+                    const imgElement = card.querySelector('.cat-image');
+                    const indicator = card.querySelector('.carousel-indicator');
+                    imgElement.src = images[card.carouselIndex];
+                    indicator.textContent = `${card.carouselIndex + 1}/${images.length}`;
+                }
+            }, 3000);
+        }
+
+        /**
+         * Stop carousel auto play
+         * 停止轮播自动播放
+         */
+        function stopCarouselAutoPlay(card) {
+            if (card.carouselInterval) {
+                clearInterval(card.carouselInterval);
+                card.carouselInterval = null;
+            }
+        }
+
+        /**
+         * Setup edit mode functionality
+         * 设置编辑模式功能
+         */
+        function setupEditMode(card, cat) {
+            const editButton = card.querySelector('.edit-button');
+            const catInfo = card.querySelector('.cat-info');
+
+            let originalData = { ...cat };
+
+            editButton.addEventListener('click', (event) => {
+                event.stopPropagation();
+
+                if (card.classList.contains('editing')) {
+                    return;
+                }
+
+                card.classList.add('editing');
+
+                catInfo.innerHTML = `
+                    <input type="text" class="edit-input" value="${cat.name}" data-field="name" placeholder="猫咪名字">
+                    <input type="text" class="edit-input small" value="${cat.breed}" data-field="breed" placeholder="品种">
+                    <input type="text" class="edit-input tiny" value="${cat.description}" data-field="description" placeholder="描述">
+                    <div class="cat-stats">
+                        <div class="stat-item">
+                            <div class="stat-label">年龄</div>
+                            <input type="text" class="edit-input small stat-value" value="${cat.age}" data-field="age" placeholder="年龄">
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">性别</div>
+                            <div class="stat-value">${cat.gender}</div>
+                        </div>
+                    </div>
+                    <input type="text" class="edit-input tiny" value="${cat.tags.join(', ')}" data-field="tags" placeholder="标签（用逗号分隔）">
+                    <div class="edit-actions">
+                        <button class="save-button">💾 保存</button>
+                        <button class="cancel-button">❌ 取消</button>
+                    </div>
+                `;
+
+                const saveBtn = catInfo.querySelector('.save-button');
+                const cancelBtn = catInfo.querySelector('.cancel-button');
+
+                saveBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    saveEdit(card, cat, catInfo);
+                });
+
+                cancelBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    cancelEdit(card, cat, catInfo, originalData);
+                });
+            });
+        }
+
+        /**
+         * Save edited information
+         * 保存编辑的信息
+         */
+        async function saveEdit(card, cat, catInfo) {
+            const nameInput = catInfo.querySelector('[data-field="name"]');
+            const breedInput = catInfo.querySelector('[data-field="breed"]');
+            const descInput = catInfo.querySelector('[data-field="description"]');
+            const ageInput = catInfo.querySelector('[data-field="age"]');
+            const tagsInput = catInfo.querySelector('[data-field="tags"]');
+
+            cat.name = nameInput.value.trim() || cat.name;
+            cat.breed = breedInput.value.trim() || cat.breed;
+            cat.description = descInput.value.trim() || cat.description;
+            cat.age = ageInput.value.trim() || cat.age;
+            cat.tags = tagsInput.value.split(',').map(t => t.trim()).filter(t => t);
+
+            // Save to API
+            // 保存到 API
+            const success = await saveCatData(cat);
+
+            if (success) {
+                restoreDisplayMode(card, cat, catInfo);
+            }
+        }
+
+        /**
+         * Cancel editing
+         * 取消编辑
+         */
+        function cancelEdit(card, cat, catInfo, originalData) {
+            Object.assign(cat, originalData);
+            restoreDisplayMode(card, cat, catInfo);
+        }
+
+        /**
+         * Restore display mode
+         * 恢复显示模式
+         */
+        function restoreDisplayMode(card, cat, catInfo) {
+            card.classList.remove('editing');
+
+            catInfo.innerHTML = `
+                <h2 class="cat-name">${cat.name}</h2>
+                <div class="cat-breed">${cat.breed}</div>
+                <p class="cat-description">${cat.description}</p>
+                <div class="cat-stats">
+                    <div class="stat-item">
+                        <div class="stat-label">年龄</div>
+                        <div class="stat-value">${cat.age}</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">性别</div>
+                        <div class="stat-value">${cat.gender}</div>
+                    </div>
+                </div>
+                <div class="cat-tags">
+                    ${cat.tags.map(tag => `<span class="tag">${tag}</span>`).join('')}
+                </div>
+                <button class="edit-button">✏️ 编辑信息</button>
+            `;
+
+            const editButton = catInfo.querySelector('.edit-button');
+            editButton.addEventListener('click', (event) => {
+                event.stopPropagation();
+                setupEditMode(card, cat);
+                editButton.click();
+            });
+        }
+
+        /**
+         * Setup GIF generation
+         * 设置 GIF 生成功能
+         */
+        function setupGifGeneration(card, catId) {
+            const gifButton = card.querySelector('.gif-button');
+
+            gifButton.addEventListener('click', async (event) => {
+                event.stopPropagation();
+
+                const cat = catsData.find(c => c.id === catId);
+                if (!cat || cat.images.length < 2) {
+                    alert('需要至少2张图片才能生成GIF动图！');
+                    return;
+                }
+
+                gifButton.disabled = true;
+                gifButton.classList.add('generating');
+                gifButton.textContent = '⏳';
+
+                try {
+                    const imageElements = await Promise.all(
+                        cat.images.map(src => loadImageForGif(src))
+                    );
+
+                    gifshot.createGIF({
+                        images: imageElements,
+                        gifWidth: 500,
+                        gifHeight: 400,
+                        interval: 1,
+                        numFrames: cat.images.length,
+                        frameDuration: 1,
+                        sampleInterval: 10,
+                        numWorkers: 2
+                    }, (obj) => {
+                        if (!obj.error) {
+                            const link = document.createElement('a');
+                            link.href = obj.image;
+                            link.download = `${cat.name}-carousel.gif`;
+                            link.click();
+
+                            alert(`GIF动图生成成功！已保存为 ${cat.name}-carousel.gif`);
+                        } else {
+                            console.error('GIF生成错误:', obj.error);
+                            alert('GIF生成失败，请重试！');
+                        }
+
+                        gifButton.disabled = false;
+                        gifButton.classList.remove('generating');
+                        gifButton.textContent = '🎬';
+                    });
+
+                } catch (error) {
+                    console.error('GIF生成错误:', error);
+                    alert('GIF生成失败，请重试！');
+
+                    gifButton.disabled = false;
+                    gifButton.classList.remove('generating');
+                    gifButton.textContent = '🎬';
+                }
+            });
+        }
+
+        /**
+         * Load image for GIF
+         * 为 GIF 加载图片
+         */
+        function loadImageForGif(src) {
+            return new Promise((resolve, reject) => {
+                const img = new Image();
+                img.crossOrigin = 'anonymous';
+
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = 500;
+                    canvas.height = 400;
+                    const ctx = canvas.getContext('2d');
+
+                    const imgRatio = img.width / img.height;
+                    const canvasRatio = canvas.width / canvas.height;
+                    let drawWidth, drawHeight, offsetX, offsetY;
+
+                    if (imgRatio > canvasRatio) {
+                        drawHeight = canvas.height;
+                        drawWidth = img.width * (canvas.height / img.height);
+                        offsetX = (canvas.width - drawWidth) / 2;
+                        offsetY = 0;
+                    } else {
+                        drawWidth = canvas.width;
+                        drawHeight = img.height * (canvas.width / img.width);
+                        offsetX = 0;
+                        offsetY = (canvas.height - drawHeight) / 2;
+                    }
+
+                    ctx.drawImage(img, offsetX, offsetY, drawWidth, drawHeight);
+                    resolve(canvas);
+                };
+
+                img.onerror = reject;
+                img.src = src;
+            });
+        }
+
+        // Initialize when DOM is ready
+        // DOM准备好后初始化
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initCatCards);
+        } else {
+            initCatCards();
+        }
+    </script>
+</body>
+</html>
