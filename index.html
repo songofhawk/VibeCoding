@@ -567,7 +567,10 @@
                     age: dbCat.age ? `${dbCat.age}岁` : '未知',
                     gender: dbCat.sex === 1 ? '公' : dbCat.sex === 2 ? '母' : '未知',
                     description: dbCat.description || '暂无描述',
-                    images: ["https://images.unsplash.com/photo-1574158622682-e40e69881006?w=500&h=400&fit=crop"],
+                    // Use images from database if available, otherwise use default - 如果数据库有图片则使用，否则使用默认图片
+                    images: (dbCat.images && dbCat.images.length > 0)
+                        ? dbCat.images
+                        : ["https://images.unsplash.com/photo-1574158622682-e40e69881006?w=500&h=400&fit=crop"],
                     badge: '数据库',
                     tags: dbCat.tags ? dbCat.tags.split(',').map(t => t.trim()).filter(t => t) : []
                 }));
@@ -715,93 +718,200 @@
         }
 
         /**
+         * Upload image to Supabase Storage
+         * 上传图片到 Supabase Storage
+         * @param {File} file - Image file
+         * @param {number} catId - Cat ID
+         * @returns {Promise<string>} - Public URL of uploaded image
+         */
+        async function uploadImageToStorage(file, catId) {
+            if (!supabaseEnabled || !supabase) {
+                throw new Error('Supabase 未启用');
+            }
+
+            // Generate unique filename - 生成唯一文件名
+            const timestamp = Date.now();
+            const fileExt = file.name.split('.').pop();
+            const randomStr = Math.random().toString(36).substring(7);
+            const fileName = `${timestamp}_${randomStr}.${fileExt}`;
+            const filePath = `${catId}/${fileName}`;
+
+            // Upload file - 上传文件
+            const { data, error } = await supabase.storage
+                .from('cat-images')
+                .upload(filePath, file, {
+                    cacheControl: '3600',
+                    upsert: false
+                });
+
+            if (error) {
+                throw error;
+            }
+
+            // Get public URL - 获取公开 URL
+            const { data: urlData } = supabase.storage
+                .from('cat-images')
+                .getPublicUrl(filePath);
+
+            return urlData.publicUrl;
+        }
+
+        /**
+         * Update cat images in database
+         * 更新数据库中的猫咪图片
+         * @param {number} catId - Cat ID
+         * @param {string[]} imageUrls - Array of image URLs
+         * @returns {Promise<boolean>} - Success status
+         */
+        async function updateCatImages(catId, imageUrls) {
+            if (!supabaseEnabled || !supabase) {
+                console.warn('Supabase 未启用，跳过数据库更新');
+                return false;
+            }
+
+            try {
+                const { error } = await supabase
+                    .from('cats')
+                    .update({
+                        images: imageUrls,
+                        updated_at: new Date().toISOString()
+                    })
+                    .eq('id', catId);
+
+                if (error) {
+                    console.error('更新图片失败:', error);
+                    return false;
+                }
+
+                return true;
+            } catch (error) {
+                console.error('更新图片时出错:', error);
+                return false;
+            }
+        }
+
+        /**
          * Process multiple uploaded images
          * 处理多张上传的图片
          * @param {File[]} files - Array of image files
          * @param {number} catId - Cat ID
          * @param {HTMLElement} card - Card element
          */
-        function processMultipleImages(files, catId, card) {
-            const imagePromises = files.map(file => {
-                return new Promise((resolve, reject) => {
-                    const reader = new FileReader();
-                    reader.onload = (e) => resolve(e.target.result);
-                    reader.onerror = reject;
-                    reader.readAsDataURL(file);
-                });
-            });
+        async function processMultipleImages(files, catId, card) {
+            const uploadButton = card.querySelector('.upload-button');
+            const originalText = uploadButton.textContent;
 
-            // Wait for all images to be read - 等待所有图片读取完成
-            Promise.all(imagePromises).then(newImageUrls => {
+            try {
+                // Show upload progress - 显示上传进度
+                uploadButton.textContent = '📤 上传中...';
+                uploadButton.disabled = true;
+
+                let newImageUrls;
+
+                // Try to upload to Supabase Storage first - 优先上传到 Supabase Storage
+                if (supabaseEnabled && supabase) {
+                    console.log(`开始上传 ${files.length} 张图片到 Supabase Storage...`);
+                    const uploadPromises = files.map(file => uploadImageToStorage(file, catId));
+                    newImageUrls = await Promise.all(uploadPromises);
+                    console.log(`✓ 成功上传 ${newImageUrls.length} 张图片到 Supabase Storage`);
+                } else {
+                    // Fallback to localStorage - 降级到 localStorage
+                    console.warn('Supabase 未启用，使用 localStorage');
+                    const imagePromises = files.map(file => {
+                        return new Promise((resolve, reject) => {
+                            const reader = new FileReader();
+                            reader.onload = (e) => resolve(e.target.result);
+                            reader.onerror = reject;
+                            reader.readAsDataURL(file);
+                        });
+                    });
+                    newImageUrls = await Promise.all(imagePromises);
+                }
+
                 // Find cat data and update images - 查找猫咪数据并更新图片
                 const cat = catsData.find(c => c.id === catId);
-                if (cat) {
-                    // Check if current images are default (from unsplash) - 检查当前图片是否是默认图片
-                    const hasDefaultImages = cat.images.length === 1 &&
-                                            cat.images[0].includes('unsplash.com');
+                if (!cat) {
+                    throw new Error('未找到猫咪数据');
+                }
 
-                    // If has default images, replace them; otherwise append - 如果有默认图片则替换，否则追加
-                    if (hasDefaultImages) {
-                        cat.images = newImageUrls;
+                // Check if current images are default (from unsplash) - 检查当前图片是否是默认图片
+                const hasDefaultImages = cat.images.length === 1 &&
+                                        cat.images[0].includes('unsplash.com');
+
+                // If has default images, replace them; otherwise append - 如果有默认图片则替换，否则追加
+                if (hasDefaultImages) {
+                    cat.images = newImageUrls;
+                } else {
+                    cat.images = [...cat.images, ...newImageUrls];
+                }
+
+                // Save to database if Supabase is enabled - 如果启用了 Supabase 则保存到数据库
+                if (supabaseEnabled && supabase) {
+                    const dbSuccess = await updateCatImages(catId, cat.images);
+                    if (dbSuccess) {
+                        console.log('✓ 图片 URLs 已保存到数据库');
                     } else {
-                        cat.images = [...cat.images, ...newImageUrls];
-                    }
-
-                    // Save to localStorage - 保存到本地存储
-                    try {
-                        localStorage.setItem(`cat-images-${catId}`, JSON.stringify(cat.images));
-                        console.log(`成功保存图片到 cat-images-${catId}，共 ${cat.images.length} 张图片`);
-                    } catch (e) {
-                        console.error('无法保存图片到本地存储:', e);
-                        if (e.name === 'QuotaExceededError') {
-                            alert('存储空间不足！图片太大或数量太多。建议：\n1. 选择较小的图片\n2. 减少图片数量\n3. 清理浏览器缓存');
-                        } else {
-                            alert('保存图片失败：' + e.message);
-                        }
-                    }
-
-                    // Update display to show the first new image - 更新显示，显示第一张新图片
-                    const imgElement = card.querySelector('.cat-image');
-                    let currentIndex;
-
-                    if (hasDefaultImages) {
-                        // If replaced default images, show first image - 如果替换了默认图片，显示第一张
-                        currentIndex = 0;
-                    } else {
-                        // If appended, show first new image - 如果是追加，显示第一张新图片
-                        currentIndex = cat.images.length - newImageUrls.length;
-                    }
-
-                    imgElement.src = cat.images[currentIndex];
-
-                    // Update indicator - 更新指示器
-                    const indicator = card.querySelector('.carousel-indicator');
-                    indicator.textContent = `${currentIndex + 1}/${cat.images.length}`;
-
-                    // Update carousel index - 更新轮播索引
-                    card.carouselIndex = currentIndex;
-
-                    // Stop existing autoplay if any - 停止现有的自动播放
-                    if (card.carouselInterval) {
-                        clearInterval(card.carouselInterval);
-                    }
-
-                    // Restart autoplay if more than 1 image - 如果有多张图片则重启自动播放
-                    if (cat.images.length > 1) {
-                        card.carouselInterval = setInterval(() => {
-                            const images = cat.images;
-                            if (images.length > 0) {
-                                card.carouselIndex = (card.carouselIndex + 1) % images.length;
-                                imgElement.src = images[card.carouselIndex];
-                                indicator.textContent = `${card.carouselIndex + 1}/${images.length}`;
-                            }
-                        }, 3000);
+                        console.warn('⚠ 数据库更新失败，仅保存到本地');
                     }
                 }
-            }).catch((error) => {
-                console.error('图片读取错误:', error);
-                alert('图片读取失败，请重试');
-            });
+
+                // Also save to localStorage as backup - 同时保存到 localStorage 作为备份
+                try {
+                    localStorage.setItem(`cat-images-${catId}`, JSON.stringify(cat.images));
+                } catch (e) {
+                    console.warn('无法保存到本地存储:', e);
+                }
+
+                // Update display to show the first new image - 更新显示，显示第一张新图片
+                const imgElement = card.querySelector('.cat-image');
+                let currentIndex;
+
+                if (hasDefaultImages) {
+                    // If replaced default images, show first image - 如果替换了默认图片，显示第一张
+                    currentIndex = 0;
+                } else {
+                    // If appended, show first new image - 如果是追加，显示第一张新图片
+                    currentIndex = cat.images.length - newImageUrls.length;
+                }
+
+                imgElement.src = cat.images[currentIndex];
+
+                // Update indicator - 更新指示器
+                const indicator = card.querySelector('.carousel-indicator');
+                indicator.textContent = `${currentIndex + 1}/${cat.images.length}`;
+
+                // Update carousel index - 更新轮播索引
+                card.carouselIndex = currentIndex;
+
+                // Stop existing autoplay if any - 停止现有的自动播放
+                if (card.carouselInterval) {
+                    clearInterval(card.carouselInterval);
+                }
+
+                // Restart autoplay if more than 1 image - 如果有多张图片则重启自动播放
+                if (cat.images.length > 1) {
+                    card.carouselInterval = setInterval(() => {
+                        const images = cat.images;
+                        if (images.length > 0) {
+                            card.carouselIndex = (card.carouselIndex + 1) % images.length;
+                            imgElement.src = images[card.carouselIndex];
+                            indicator.textContent = `${card.carouselIndex + 1}/${images.length}`;
+                        }
+                    }, 3000);
+                }
+
+                // Reset upload button - 恢复上传按钮
+                uploadButton.textContent = originalText;
+                uploadButton.disabled = false;
+
+            } catch (error) {
+                console.error('图片上传失败:', error);
+                alert('图片上传失败: ' + error.message);
+
+                // Reset upload button - 恢复上传按钮
+                uploadButton.textContent = originalText;
+                uploadButton.disabled = false;
+            }
         }
 
         /**
