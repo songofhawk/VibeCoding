@@ -1,0 +1,418 @@
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            width: 100%;
+        }
+
+        .title {
+            text-align: center;
+            color: white;
+            font-size: 2.5rem;
+            margin-bottom: 40px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .cards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 30px;
+            padding: 20px;
+        }
+
+        /* Cat card styling */
+        .cat-card {
+            background: white;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            cursor: pointer;
+        }
+
+        .cat-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .cat-image-container {
+            width: 100%;
+            height: 250px;
+            overflow: hidden;
+            background: #f5f5f5;
+            position: relative;
+        }
+
+        .cat-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.3s ease;
+        }
+
+        .cat-card:hover .cat-image {
+            transform: scale(1.1);
+        }
+
+        .cat-badge {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Photo upload button styling */
+        .upload-button {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(102, 126, 234, 0.95);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 25px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            z-index: 20;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            pointer-events: none;
+        }
+
+        .upload-button:hover {
+            background: rgba(102, 126, 234, 1);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+        }
+
+        .cat-image-container:hover .upload-button {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .cat-image-container:hover::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.4);
+            z-index: 5;
+        }
+
+        /* Hide file input */
+        .file-input {
+            display: none;
+        }
+
+        /* GIF generation button - 生成GIF按钮 */
+        .gif-button {
+            position: absolute;
+            bottom: 15px;
+            right: 15px;
+            background: rgba(255, 255, 255, 0.8);
+            border: none;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            z-index: 10;
+            opacity: 0.6;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+        }
+
+        .gif-button:hover {
+            opacity: 1;
+            background: rgba(255, 255, 255, 0.95);
+            transform: scale(1.1);
+        }
+
+        .gif-button.generating {
+            background: rgba(102, 126, 234, 0.9);
+            color: white;
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 0.6; }
+            50% { opacity: 1; }
+        }
+
+        /* Carousel controls - 轮播图控制 */
+        .carousel-nav {
+            position: absolute;
+            top: 50%;
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            padding: 0 10px;
+            transform: translateY(-50%);
+            z-index: 15;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            pointer-events: none;
+        }
+
+        .cat-image-container:hover .carousel-nav {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .carousel-btn {
+            background: rgba(255, 255, 255, 0.9);
+            border: none;
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .carousel-btn:hover {
+            background: white;
+            transform: scale(1.1);
+        }
+
+        .carousel-indicator {
+            position: absolute;
+            bottom: 15px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.6);
+            color: white;
+            padding: 5px 12px;
+            border-radius: 15px;
+            font-size: 0.8rem;
+            z-index: 15;
+        }
+
+        /* Edit button - 编辑按钮 */
+        .edit-button {
+            display: block;
+            width: 100%;
+            padding: 10px;
+            margin-top: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .edit-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        /* Edit mode styling - 编辑模式样式 */
+        .cat-card.editing {
+            border: 3px solid #667eea;
+            box-shadow: 0 15px 40px rgba(102, 126, 234, 0.3);
+        }
+
+        .cat-card.editing .cat-card:hover {
+            transform: none;
+        }
+
+        .edit-input {
+            width: 100%;
+            padding: 8px 12px;
+            border: 2px solid #667eea;
+            border-radius: 8px;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 10px;
+            background: #f8f9ff;
+        }
+
+        .edit-input:focus {
+            outline: none;
+            border-color: #764ba2;
+            background: white;
+        }
+
+        .edit-input.small {
+            font-size: 1.1rem;
+            font-weight: 400;
+        }
+
+        .edit-input.tiny {
+            font-size: 0.9rem;
+        }
+
+        .stat-item input.edit-input {
+            width: 100%;
+            padding: 5px 8px;
+            text-align: center;
+        }
+
+        .edit-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .edit-actions button {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 10px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .save-button {
+            background: #28a745;
+            color: white;
+        }
+
+        .save-button:hover {
+            background: #218838;
+            transform: translateY(-2px);
+        }
+
+        .cancel-button {
+            background: #6c757d;
+            color: white;
+        }
+
+        .cancel-button:hover {
+            background: #5a6268;
+            transform: translateY(-2px);
+        }
+
+        .cat-info {
+            padding: 20px;
+        }
+
+        .cat-name {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .cat-breed {
+            color: #667eea;
+            font-size: 0.95rem;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+
+        .cat-description {
+            color: #666;
+            font-size: 0.9rem;
+            line-height: 1.6;
+            margin-bottom: 15px;
+        }
+
+        .cat-stats {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .stat-item {
+            flex: 1;
+            text-align: center;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+
+        .stat-label {
+            font-size: 0.75rem;
+            color: #999;
+            margin-bottom: 5px;
+        }
+
+        .stat-value {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #333;
+        }
+
+        .cat-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .tag {
+            padding: 5px 12px;
+            background: #e9ecef;
+            color: #495057;
+            border-radius: 15px;
+            font-size: 0.8rem;
+        }
+
+        /* Loading animation */
+        .loading {
+            text-align: center;
+            color: white;
+            font-size: 1.2rem;
+        }
+
+        .loading-spinner {
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-top: 4px solid white;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Responsive design */
+        @media (max-width: 768px) {
+            .title {
+                font-size: 2rem;
+            }
+
+            .cards-grid {
+                grid-template-columns: 1fr;
+            }
+        }

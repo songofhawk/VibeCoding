@@ -3,9 +3,10 @@
 ## 技术栈约束
 - 前端:使用原生 JavaScript,不使用任何框架
 - 样式:使用内联 CSS 或 `<style>` 标签,不使用 CSS 预处理器
-- 后端:使用 Vercel Serverless Functions(阶段 6 引入)
-- 数据库:使用 Supabase(阶段 7 引入)
-- 认证:使用 Supabase Auth(阶段 6 引入)
+- 本地数据库：使用 postgresql (阶段 5 引入)
+- 后端: 基于 supabase 公开权限的数据库和文件存储
+- 部署：基于 Versel 部署，数据库使用 Supabase (阶段 6 引入)
+- 认证:使用 Supabase Auth(阶段 7 引入)
 
 ## 代码风格
 - 所有函数和变量使用清晰的英文命名
