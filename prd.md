@@ -45,6 +45,7 @@ create table public.cats (
   tags character varying null,
   created_at timestamp with time zone not null default now(),
   updated_at timestamp without time zone null default now(),
+  images text[] null,
   constraint cat_pkey primary key (id)
 ) TABLESPACE pg_default;
 ```
