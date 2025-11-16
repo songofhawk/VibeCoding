@@ -846,10 +846,10 @@
                     age: dbCat.age ? `${dbCat.age}岁` : '未知',
                     gender: dbCat.sex === 1 ? '公' : dbCat.sex === 2 ? '母' : '未知',
                     description: dbCat.description || '暂无描述',
-                    // Use images from database if available, otherwise use default - 如果数据库有图片则使用，否则使用默认图片
-                    images: (dbCat.images && dbCat.images.length > 0)
+                    // Use images from database, ensure it's always an array - 使用数据库的图片，确保始终是数组
+                    images: (dbCat.images && Array.isArray(dbCat.images) && dbCat.images.length > 0)
                         ? dbCat.images
-                        : ["https://images.unsplash.com/photo-1574158622682-e40e69881006?w=500&h=400&fit=crop"],
+                        : [], // 空数组，不添加默认图片
                     badge: '数据库',
                     tags: dbCat.tags ? dbCat.tags.split(',').map(t => t.trim()).filter(t => t) : []
                 }));
@@ -889,10 +889,11 @@
                     container.appendChild(card);
                 });
 
+                // 注释掉 localStorage 加载，现在所有数据都来自数据库
                 // Load saved images after cards are rendered - 卡片渲染后加载保存的图片
-                setTimeout(() => {
-                    loadSavedImages();
-                }, 100);
+                // setTimeout(() => {
+                //     loadSavedImages();
+                // }, 100);
             }, 800);
         }
 
@@ -908,10 +909,18 @@
             card.className = 'cat-card';
             card.setAttribute('data-cat-id', cat.id);
 
+            // Get image src, use placeholder if no images - 获取图片源，如果没有图片则使用占位符
+            const imageSrc = (cat.images && cat.images.length > 0)
+                ? cat.images[0]
+                : 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="500" height="400"%3E%3Crect fill="%23f0f0f0" width="500" height="400"/%3E%3Ctext fill="%23999" font-family="sans-serif" font-size="24" dy="200" dx="150"%3E点击上传照片%3C/text%3E%3C/svg%3E';
+
+            const imageCount = cat.images ? cat.images.length : 0;
+            const indicatorText = imageCount > 0 ? `1/${imageCount}` : '0 张照片';
+
             // Build card HTML - 构建卡片HTML
             card.innerHTML = `
                 <div class="cat-image-container">
-                    <img src="${cat.images[0]}" alt="${cat.name}" class="cat-image" data-cat-id="${cat.id}">
+                    <img src="${imageSrc}" alt="${cat.name}" class="cat-image" data-cat-id="${cat.id}">
                     <div class="cat-badge">${cat.badge}</div>
                     <button class="upload-button" data-cat-id="${cat.id}">📷 选择照片</button>
                     <input type="file" class="file-input" accept="image/*" multiple data-cat-id="${cat.id}">
@@ -920,7 +929,7 @@
                         <button class="carousel-btn prev-btn">‹</button>
                         <button class="carousel-btn next-btn">›</button>
                     </div>
-                    <div class="carousel-indicator">1/${cat.images.length}</div>
+                    <div class="carousel-indicator">${indicatorText}</div>
                 </div>
                 <div class="cat-info">
                     <h2 class="cat-name">${cat.name}</h2>
@@ -1162,12 +1171,13 @@
                     }
                 }
 
+                // 注释掉 localStorage 备份，现在所有数据都来自数据库
                 // Also save to localStorage as backup - 同时保存到 localStorage 作为备份
-                try {
-                    localStorage.setItem(`cat-images-${catId}`, JSON.stringify(cat.images));
-                } catch (e) {
-                    console.warn('无法保存到本地存储:', e);
-                }
+                // try {
+                //     localStorage.setItem(`cat-images-${catId}`, JSON.stringify(cat.images));
+                // } catch (e) {
+                //     console.warn('无法保存到本地存储:', e);
+                // }
 
                 // Update display to show the first new image - 更新显示，显示第一张新图片
                 const imgElement = card.querySelector('.cat-image');
@@ -1321,7 +1331,7 @@
                     return;
                 }
 
-                // Enter edit mode - 进入编辑模式
+                // Enter edit mode - 进入编辑模��
                 card.classList.add('editing');
 
                 // Replace display elements with inputs - 用输入框替换显示元素
@@ -1459,12 +1469,13 @@
             // Save to database - 保存到数据库
             const dbSuccess = await saveCatToDatabase(cat);
 
+            // 注释掉 localStorage 备份，现在所有数据都来自数据库
             // Save to localStorage as backup - 保存到本地存储作为备份
-            try {
-                localStorage.setItem(`cat-data-${cat.id}`, JSON.stringify(cat));
-            } catch (e) {
-                console.warn('无法保存数据到本地存储:', e);
-            }
+            // try {
+            //     localStorage.setItem(`cat-data-${cat.id}`, JSON.stringify(cat));
+            // } catch (e) {
+            //     console.warn('无法保存数据到本地存储:', e);
+            // }
 
             // Show success message - 显示成功消息
             if (dbSuccess) {
@@ -2034,6 +2045,7 @@
             }
 
             try {
+                // 不要指定 id，让数据库自动生成
                 const { data, error } = await supabase
                     .from('cats')
                     .insert({
@@ -2051,13 +2063,28 @@
 
                 if (error) throw error;
 
-                alert('猫咪添加成功！');
+                console.log('✓ 猫咪创建成功:', data);
+                alert(`猫咪 "${catData.name}" 添加成功！`);
+
                 // Reload to show new cat - 重新加载以显示新猫咪
-                location.reload();
+                setTimeout(() => {
+                    location.reload();
+                }, 500);
 
             } catch (error) {
                 console.error('Create cat error:', error);
-                alert('添加猫咪失败: ' + error.message);
+
+                // 提供更友好的错误信息
+                let errorMessage = '添加猫咪失败';
+                if (error.message.includes('duplicate key')) {
+                    errorMessage = '数据库ID冲突，请重试';
+                } else if (error.message.includes('violates row-level security')) {
+                    errorMessage = '权限不足，请确保已登录';
+                } else {
+                    errorMessage = error.message;
+                }
+
+                alert('添加猫咪失败: ' + errorMessage);
             }
         }
 
