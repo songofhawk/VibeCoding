@@ -122,6 +122,7 @@ USING (
 CREATE TABLE IF NOT EXISTS public.profiles (
     id uuid REFERENCES auth.users(id) ON DELETE CASCADE PRIMARY KEY,
     username text UNIQUE,
+    email text,
     avatar_url text,
     created_at timestamp with time zone DEFAULT now(),
     updated_at timestamp with time zone DEFAULT now()
@@ -131,6 +132,7 @@ CREATE TABLE IF NOT EXISTS public.profiles (
 COMMENT ON TABLE public.profiles IS '用户资料表';
 COMMENT ON COLUMN public.profiles.id IS '用户ID，关联到 auth.users';
 COMMENT ON COLUMN public.profiles.username IS '用户名（唯一）';
+COMMENT ON COLUMN public.profiles.email IS '用户邮箱（从 auth.users 同步）';
 COMMENT ON COLUMN public.profiles.avatar_url IS '用户头像URL';
 
 -- 启用 RLS
@@ -155,10 +157,11 @@ WITH CHECK (auth.uid() = id);
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS trigger AS $$
 BEGIN
-    INSERT INTO public.profiles (id, username)
+    INSERT INTO public.profiles (id, username, email)
     VALUES (
         new.id,
-        COALESCE(new.raw_user_meta_data->>'username', split_part(new.email, '@', 1))
+        COALESCE(new.raw_user_meta_data->>'username', split_part(new.email, '@', 1)),
+        new.email
     );
     RETURN new;
 END;
