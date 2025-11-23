@@ -645,6 +645,165 @@
             100% { transform: rotate(360deg); }
         }
 
+        /* Interactions section - 互动区域样式 */
+        .cat-interactions {
+            border-top: 1px solid #e0e0e0;
+            padding-top: 15px;
+            margin-top: 15px;
+        }
+
+        .interaction-buttons {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .interaction-btn {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 10px;
+            background: #f8f9fa;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            color: #666;
+        }
+
+        .interaction-btn:hover {
+            background: #e9ecef;
+            border-color: #667eea;
+            color: #667eea;
+        }
+
+        .interaction-btn.liked {
+            background: #fee;
+            border-color: #f44;
+            color: #f44;
+        }
+
+        .interaction-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* Comments section - 评论区样式 */
+        .comments-section {
+            margin-top: 15px;
+        }
+
+        .comments-toggle {
+            width: 100%;
+            padding: 8px;
+            background: transparent;
+            border: none;
+            color: #667eea;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            text-align: left;
+            transition: color 0.3s ease;
+        }
+
+        .comments-toggle:hover {
+            color: #764ba2;
+        }
+
+        .comments-list {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+        }
+
+        .comments-list.expanded {
+            max-height: 500px;
+            overflow-y: auto;
+        }
+
+        .comment-item {
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            margin-bottom: 8px;
+        }
+
+        .comment-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 5px;
+        }
+
+        .comment-author {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: #667eea;
+        }
+
+        .comment-time {
+            font-size: 0.75rem;
+            color: #999;
+        }
+
+        .comment-content {
+            font-size: 0.85rem;
+            color: #333;
+            line-height: 1.4;
+        }
+
+        .comment-form {
+            display: flex;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .comment-input {
+            flex: 1;
+            padding: 8px 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            transition: border-color 0.3s ease;
+        }
+
+        .comment-input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .comment-submit {
+            padding: 8px 16px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+
+        .comment-submit:hover {
+            background: #764ba2;
+        }
+
+        .comment-submit:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .no-comments {
+            text-align: center;
+            color: #999;
+            font-size: 0.85rem;
+            padding: 15px;
+        }
+
         /* Responsive design */
         @media (max-width: 768px) {
             .title {
@@ -850,7 +1009,8 @@
                     images: (dbCat.images && Array.isArray(dbCat.images) && dbCat.images.length > 0)
                         ? dbCat.images
                         : [], // 空数组，不添加默认图片
-                    badge: '数据库',
+                    badge: dbCat.user_id ? '我的猫咪' : '待领养',
+                    user_id: dbCat.user_id, // Store user_id for permission checking - 存储用户ID用于权限检查
                     tags: dbCat.tags ? dbCat.tags.split(',').map(t => t.trim()).filter(t => t) : []
                 }));
             } catch (error) {
@@ -917,13 +1077,16 @@
             const imageCount = cat.images ? cat.images.length : 0;
             const indicatorText = imageCount > 0 ? `1/${imageCount}` : '0 张照片';
 
+            // Check if current user owns this cat - 检查当前用户是否拥有这只猫
+            const isOwner = currentUser && cat.user_id && currentUser.id === cat.user_id;
+
             // Build card HTML - 构建卡片HTML
             card.innerHTML = `
                 <div class="cat-image-container">
                     <img src="${imageSrc}" alt="${cat.name}" class="cat-image" data-cat-id="${cat.id}">
                     <div class="cat-badge">${cat.badge}</div>
-                    <button class="upload-button" data-cat-id="${cat.id}">📷 选择照片</button>
-                    <input type="file" class="file-input" accept="image/*" multiple data-cat-id="${cat.id}">
+                    ${isOwner ? `<button class="upload-button" data-cat-id="${cat.id}">📷 选择照片</button>` : ''}
+                    ${isOwner ? `<input type="file" class="file-input" accept="image/*" multiple data-cat-id="${cat.id}">` : ''}
                     <button class="gif-button" data-cat-id="${cat.id}" title="生成轮播GIF">🎬</button>
                     <div class="carousel-nav">
                         <button class="carousel-btn prev-btn">‹</button>
@@ -948,7 +1111,34 @@
                     <div class="cat-tags">
                         ${cat.tags.map(tag => `<span class="tag">${tag}</span>`).join('')}
                     </div>
-                    <button class="edit-button">✏️ 编辑信息</button>
+                    ${isOwner ? `<button class="edit-button">✏️ 编辑信息</button>` : ''}
+
+                    <!-- Interactions section - 互动区 -->
+                    <div class="cat-interactions">
+                        <div class="interaction-buttons">
+                            <button class="interaction-btn like-btn" data-cat-id="${cat.id}">
+                                <span class="like-icon">❤️</span>
+                                <span class="like-count">0</span>
+                            </button>
+                            <button class="interaction-btn comment-btn" data-cat-id="${cat.id}">
+                                <span>💬</span>
+                                <span class="comment-count">0</span>
+                            </button>
+                        </div>
+
+                        <div class="comments-section">
+                            <button class="comments-toggle">查看评论 ▼</button>
+                            <div class="comments-list">
+                                <div class="no-comments">暂无评论</div>
+                            </div>
+                            ${currentUser ? `
+                            <form class="comment-form">
+                                <input type="text" class="comment-input" placeholder="写下你的评论..." required>
+                                <button type="submit" class="comment-submit">发送</button>
+                            </form>
+                            ` : ''}
+                        </div>
+                    </div>
                 </div>
             `;
 
@@ -964,6 +1154,9 @@
             // Setup GIF generation functionality - 设置GIF生成功能
             setupGifGeneration(card, cat.id);
 
+            // Setup interactions functionality - 设置互动功能
+            setupInteractions(card, cat.id);
+
             return card;
         }
 
@@ -976,6 +1169,11 @@
         function setupPhotoUpload(card, catId) {
             const uploadButton = card.querySelector('.upload-button');
             const fileInput = card.querySelector('.file-input');
+
+            // If buttons don't exist (not owner), return early - 如果按钮不存在(非所有者)，直接返回
+            if (!uploadButton || !fileInput) {
+                return;
+            }
 
             // Click upload button to trigger file input - 点击上传按钮触发文件选择
             uploadButton.addEventListener('click', (event) => {
@@ -1319,6 +1517,11 @@
         function setupEditMode(card, cat) {
             const editButton = card.querySelector('.edit-button');
             const catInfo = card.querySelector('.cat-info');
+
+            // If edit button doesn't exist (not owner), return early - 如果编辑按钮不存在(非所有者)，直接返回
+            if (!editButton) {
+                return;
+            }
 
             // Store original data - 存储原始数据
             let originalData = { ...cat };
@@ -2119,6 +2322,333 @@
             const messageDiv = document.getElementById('authMessage');
             messageDiv.className = type === 'success' ? 'auth-success' : 'auth-error';
             messageDiv.textContent = message;
+        }
+
+        // ===========================================================
+        // Interactions Functions - 互动功能
+        // ===========================================================
+
+        /**
+         * Setup interactions (likes and comments) for a cat card
+         * 为猫咪卡片设置互动功能（点赞和评论）
+         * @param {HTMLElement} card - Card element
+         * @param {number} catId - Cat ID
+         */
+        async function setupInteractions(card, catId) {
+            // Load initial data - 加载初始数据
+            await loadLikesAndComments(card, catId);
+
+            // Setup like button - 设置点赞按钮
+            setupLikeButton(card, catId);
+
+            // Setup comments toggle - 设置评论展开/收起
+            setupCommentsToggle(card);
+
+            // Setup comment form - 设置评论表单
+            setupCommentForm(card, catId);
+        }
+
+        /**
+         * Load likes and comments for a cat
+         * 加载猫咪的点赞和评论数据
+         * @param {HTMLElement} card - Card element
+         * @param {number} catId - Cat ID
+         */
+        async function loadLikesAndComments(card, catId) {
+            if (!supabaseEnabled || !supabase) {
+                return;
+            }
+
+            try {
+                // Load likes count - 加载点赞数
+                const { data: likes, error: likesError } = await supabase
+                    .from('likes')
+                    .select('*')
+                    .eq('cat_id', catId);
+
+                if (!likesError && likes) {
+                    const likeCount = likes.length;
+                    const likeCountSpan = card.querySelector('.like-count');
+                    if (likeCountSpan) {
+                        likeCountSpan.textContent = likeCount;
+                    }
+
+                    // Check if current user has liked - 检查当前用户是否点赞
+                    if (currentUser) {
+                        const userLiked = likes.some(like => like.user_id === currentUser.id);
+                        const likeBtn = card.querySelector('.like-btn');
+                        if (userLiked && likeBtn) {
+                            likeBtn.classList.add('liked');
+                        }
+                    }
+                }
+
+                // Load comments - 加载评论
+                const { data: comments, error: commentsError } = await supabase
+                    .from('comments')
+                    .select('*')
+                    .eq('cat_id', catId)
+                    .order('created_at', { ascending: false });
+
+                if (!commentsError && comments) {
+                    const commentCount = comments.length;
+                    const commentCountSpan = card.querySelector('.comment-count');
+                    if (commentCountSpan) {
+                        commentCountSpan.textContent = commentCount;
+                    }
+
+                    // Render comments - 渲染评论
+                    renderComments(card, comments);
+                }
+            } catch (error) {
+                console.error('加载互动数据失败:', error);
+            }
+        }
+
+        /**
+         * Setup like button functionality
+         * 设置点赞按钮功能
+         * @param {HTMLElement} card - Card element
+         * @param {number} catId - Cat ID
+         */
+        function setupLikeButton(card, catId) {
+            const likeBtn = card.querySelector('.like-btn');
+            if (!likeBtn) return;
+
+            likeBtn.addEventListener('click', async (event) => {
+                event.stopPropagation();
+
+                // Check if user is logged in - 检查用户是否登录
+                if (!currentUser) {
+                    showAuthModal('login');
+                    return;
+                }
+
+                if (!supabaseEnabled || !supabase) {
+                    alert('功能暂时不可用');
+                    return;
+                }
+
+                try {
+                    likeBtn.disabled = true;
+
+                    const isLiked = likeBtn.classList.contains('liked');
+
+                    if (isLiked) {
+                        // Unlike - 取消点赞
+                        const { error } = await supabase
+                            .from('likes')
+                            .delete()
+                            .eq('cat_id', catId)
+                            .eq('user_id', currentUser.id);
+
+                        if (error) throw error;
+
+                        likeBtn.classList.remove('liked');
+                        const likeCountSpan = likeBtn.querySelector('.like-count');
+                        const currentCount = parseInt(likeCountSpan.textContent) || 0;
+                        likeCountSpan.textContent = Math.max(0, currentCount - 1);
+                    } else {
+                        // Like - 点赞
+                        const { error } = await supabase
+                            .from('likes')
+                            .insert({
+                                cat_id: catId,
+                                user_id: currentUser.id
+                            });
+
+                        if (error) throw error;
+
+                        likeBtn.classList.add('liked');
+                        const likeCountSpan = likeBtn.querySelector('.like-count');
+                        const currentCount = parseInt(likeCountSpan.textContent) || 0;
+                        likeCountSpan.textContent = currentCount + 1;
+                    }
+                } catch (error) {
+                    console.error('点赞操作失败:', error);
+                    alert('操作失败，请重试');
+                } finally {
+                    likeBtn.disabled = false;
+                }
+            });
+        }
+
+        /**
+         * Setup comments toggle functionality
+         * 设置评论展开/收起功能
+         * @param {HTMLElement} card - Card element
+         */
+        function setupCommentsToggle(card) {
+            const toggleBtn = card.querySelector('.comments-toggle');
+            const commentsList = card.querySelector('.comments-list');
+
+            if (!toggleBtn || !commentsList) return;
+
+            toggleBtn.addEventListener('click', () => {
+                const isExpanded = commentsList.classList.contains('expanded');
+
+                if (isExpanded) {
+                    commentsList.classList.remove('expanded');
+                    toggleBtn.textContent = '查看评论 ▼';
+                } else {
+                    commentsList.classList.add('expanded');
+                    toggleBtn.textContent = '收起评论 ▲';
+                }
+            });
+        }
+
+        /**
+         * Setup comment form functionality
+         * 设置评论表单功能
+         * @param {HTMLElement} card - Card element
+         * @param {number} catId - Cat ID
+         */
+        function setupCommentForm(card, catId) {
+            const commentForm = card.querySelector('.comment-form');
+            if (!commentForm) return;
+
+            commentForm.addEventListener('submit', async (event) => {
+                event.preventDefault();
+
+                if (!currentUser) {
+                    showAuthModal('login');
+                    return;
+                }
+
+                if (!supabaseEnabled || !supabase) {
+                    alert('功能暂时不可用');
+                    return;
+                }
+
+                const commentInput = commentForm.querySelector('.comment-input');
+                const commentSubmit = commentForm.querySelector('.comment-submit');
+                const content = commentInput.value.trim();
+
+                if (!content) return;
+
+                try {
+                    commentSubmit.disabled = true;
+                    commentSubmit.textContent = '发送中...';
+
+                    // Insert comment - 插入评论
+                    const { data, error } = await supabase
+                        .from('comments')
+                        .insert({
+                            cat_id: catId,
+                            user_id: currentUser.id,
+                            content: content
+                        })
+                        .select()
+                        .single();
+
+                    if (error) throw error;
+
+                    // Clear input - 清空输入框
+                    commentInput.value = '';
+
+                    // Reload comments - 重新加载评论
+                    const { data: comments, error: loadError } = await supabase
+                        .from('comments')
+                        .select('*')
+                        .eq('cat_id', catId)
+                        .order('created_at', { ascending: false });
+
+                    if (!loadError && comments) {
+                        renderComments(card, comments);
+
+                        // Update comment count - 更新评论数
+                        const commentCountSpan = card.querySelector('.comment-count');
+                        if (commentCountSpan) {
+                            commentCountSpan.textContent = comments.length;
+                        }
+
+                        // Auto expand comments if not expanded - 自动展开评论区
+                        const commentsList = card.querySelector('.comments-list');
+                        const toggleBtn = card.querySelector('.comments-toggle');
+                        if (commentsList && !commentsList.classList.contains('expanded')) {
+                            commentsList.classList.add('expanded');
+                            if (toggleBtn) {
+                                toggleBtn.textContent = '收起评论 ▲';
+                            }
+                        }
+                    }
+                } catch (error) {
+                    console.error('发送评论失败:', error);
+                    alert('发送评论失败，请重试');
+                } finally {
+                    commentSubmit.disabled = false;
+                    commentSubmit.textContent = '发送';
+                }
+            });
+        }
+
+        /**
+         * Render comments list
+         * 渲染评论列表
+         * @param {HTMLElement} card - Card element
+         * @param {Array} comments - Comments array
+         */
+        function renderComments(card, comments) {
+            const commentsList = card.querySelector('.comments-list');
+            if (!commentsList) return;
+
+            if (!comments || comments.length === 0) {
+                commentsList.innerHTML = '<div class="no-comments">暂无评论</div>';
+                return;
+            }
+
+            const commentsHTML = comments.map(comment => {
+                const date = new Date(comment.created_at);
+                const timeAgo = getTimeAgo(date);
+
+                // Get email username (part before @) - 获取邮箱用户名
+                const email = comment.user_id || 'anonymous';
+                const username = email.split('@')[0] || '匿名用户';
+
+                return `
+                    <div class="comment-item">
+                        <div class="comment-header">
+                            <span class="comment-author">${username}</span>
+                            <span class="comment-time">${timeAgo}</span>
+                        </div>
+                        <div class="comment-content">${escapeHtml(comment.content)}</div>
+                    </div>
+                `;
+            }).join('');
+
+            commentsList.innerHTML = commentsHTML;
+        }
+
+        /**
+         * Get time ago string
+         * 获取相对时间字符串
+         * @param {Date} date - Date object
+         * @returns {string} - Time ago string
+         */
+        function getTimeAgo(date) {
+            const now = new Date();
+            const diff = now - date;
+            const seconds = Math.floor(diff / 1000);
+            const minutes = Math.floor(seconds / 60);
+            const hours = Math.floor(minutes / 60);
+            const days = Math.floor(hours / 24);
+
+            if (days > 0) return `${days}天前`;
+            if (hours > 0) return `${hours}小时前`;
+            if (minutes > 0) return `${minutes}分钟前`;
+            return '刚刚';
+        }
+
+        /**
+         * Escape HTML to prevent XSS
+         * 转义 HTML 防止 XSS 攻击
+         * @param {string} text - Text to escape
+         * @returns {string} - Escaped text
+         */
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
         }
 
         // ===========================================================

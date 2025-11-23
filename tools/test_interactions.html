@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>互动功能测试 - 喵宇宙</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 40px 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 2rem;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+        }
+
+        .test-section {
+            margin-bottom: 40px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 15px;
+        }
+
+        .test-section h2 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 1.3rem;
+        }
+
+        .test-button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            margin: 5px;
+            transition: all 0.3s ease;
+        }
+
+        .test-button:hover {
+            background: #764ba2;
+            transform: translateY(-2px);
+        }
+
+        .test-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .result {
+            margin-top: 15px;
+            padding: 15px;
+            background: white;
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+        }
+
+        .result pre {
+            overflow-x: auto;
+            font-size: 0.9rem;
+            color: #333;
+        }
+
+        .status {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .status.info {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+
+        .input-group {
+            margin: 10px 0;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: #333;
+            font-weight: 600;
+        }
+
+        .input-group input, .input-group textarea {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 0.95rem;
+        }
+
+        .input-group textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 互动功能测试工具</h1>
+        <p class="subtitle">测试点赞和评论功能的数据库连接</p>
+
+        <!-- Connection Test -->
+        <div class="test-section">
+            <h2>1. 连接测试</h2>
+            <button class="test-button" onclick="testConnection()">测试 Supabase 连接</button>
+            <button class="test-button" onclick="checkTables()">检查数据表</button>
+            <div id="connectionResult" class="result" style="display:none;"></div>
+        </div>
+
+        <!-- Likes Test -->
+        <div class="test-section">
+            <h2>2. 点赞功能测试</h2>
+            <div class="input-group">
+                <label>猫咪 ID:</label>
+                <input type="number" id="likeCatId" value="1" min="1">
+            </div>
+            <button class="test-button" onclick="testGetLikes()">获取点赞数</button>
+            <button class="test-button" onclick="testAddLike()">添加点赞</button>
+            <button class="test-button" onclick="testRemoveLike()">取消点赞</button>
+            <div id="likesResult" class="result" style="display:none;"></div>
+        </div>
+
+        <!-- Comments Test -->
+        <div class="test-section">
+            <h2>3. 评论功能测试</h2>
+            <div class="input-group">
+                <label>猫咪 ID:</label>
+                <input type="number" id="commentCatId" value="1" min="1">
+            </div>
+            <div class="input-group">
+                <label>评论内容:</label>
+                <textarea id="commentContent" placeholder="输入测试评论...">这是一条测试评论 🐱</textarea>
+            </div>
+            <button class="test-button" onclick="testGetComments()">获取评论</button>
+            <button class="test-button" onclick="testAddComment()">添加评论</button>
+            <div id="commentsResult" class="result" style="display:none;"></div>
+        </div>
+
+        <!-- Auth Status -->
+        <div class="test-section">
+            <h2>4. 认证状态</h2>
+            <button class="test-button" onclick="checkAuthStatus()">检查登录状态</button>
+            <div id="authResult" class="result" style="display:none;"></div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        const SUPABASE_URL = 'https://vswrhnmhumfxgfrwpfwc.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZzd3Jobm1odW1meGdmcndwZndjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI2NDU2NDMsImV4cCI6MjA3ODIyMTY0M30.LRkpH5Wp-w9BOwD-CUJ3Yz9G_5Us0fkjBgKN3zdcL2s';
+
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        let currentUser = null;
+
+        // Initialize and check auth
+        async function init() {
+            const { data } = await supabase.auth.getSession();
+            if (data.session) {
+                currentUser = data.session.user;
+            }
+        }
+
+        init();
+
+        function showResult(elementId, status, message, data = null) {
+            const element = document.getElementById(elementId);
+            element.style.display = 'block';
+
+            let html = `<div class="status ${status}">${status.toUpperCase()}</div>`;
+            html += `<p>${message}</p>`;
+
+            if (data) {
+                html += `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+            }
+
+            element.innerHTML = html;
+        }
+
+        async function testConnection() {
+            try {
+                const { data, error } = await supabase.from('cats').select('count');
+
+                if (error) throw error;
+
+                showResult('connectionResult', 'success',
+                    '✓ Supabase 连接成功！',
+                    { message: '数据库连接正常', timestamp: new Date().toISOString() }
+                );
+            } catch (error) {
+                showResult('connectionResult', 'error',
+                    '✗ 连接失败',
+                    { error: error.message }
+                );
+            }
+        }
+
+        async function checkTables() {
+            try {
+                // Check likes table
+                const { data: likesData, error: likesError } = await supabase
+                    .from('likes')
+                    .select('count');
+
+                // Check comments table
+                const { data: commentsData, error: commentsError } = await supabase
+                    .from('comments')
+                    .select('count');
+
+                const result = {
+                    likes: likesError ? `错误: ${likesError.message}` : '✓ 表存在',
+                    comments: commentsError ? `错误: ${commentsError.message}` : '✓ 表存在'
+                };
+
+                const allGood = !likesError && !commentsError;
+
+                showResult('connectionResult', allGood ? 'success' : 'error',
+                    allGood ? '✓ 所有互动表都已正确创建' : '⚠ 部分表不存在或无权限',
+                    result
+                );
+            } catch (error) {
+                showResult('connectionResult', 'error',
+                    '✗ 检查表时出错',
+                    { error: error.message }
+                );
+            }
+        }
+
+        async function testGetLikes() {
+            const catId = document.getElementById('likeCatId').value;
+
+            try {
+                const { data, error } = await supabase
+                    .from('likes')
+                    .select('*')
+                    .eq('cat_id', catId);
+
+                if (error) throw error;
+
+                showResult('likesResult', 'success',
+                    `✓ 成功获取点赞数据（共 ${data.length} 条）`,
+                    data
+                );
+            } catch (error) {
+                showResult('likesResult', 'error',
+                    '✗ 获取点赞失败',
+                    { error: error.message }
+                );
+            }
+        }
+
+        async function testAddLike() {
+            if (!currentUser) {
+                showResult('likesResult', 'error', '✗ 请先登录', null);
+                return;
+            }
+
+            const catId = document.getElementById('likeCatId').value;
+
+            try {
+                const { data, error } = await supabase
+                    .from('likes')
+                    .insert({
+                        cat_id: parseInt(catId),
+                        user_id: currentUser.id
+                    })
+                    .select();
+
+                if (error) throw error;
+
+                showResult('likesResult', 'success',
+                    '✓ 成功添加点赞',
+                    data
+                );
+            } catch (error) {
+                showResult('likesResult', 'error',
+                    '✗ 添加点赞失败',
+                    { error: error.message, hint: '可能已经点赞过了' }
+                );
+            }
+        }
+
+        async function testRemoveLike() {
+            if (!currentUser) {
+                showResult('likesResult', 'error', '✗ 请先登录', null);
+                return;
+            }
+
+            const catId = document.getElementById('likeCatId').value;
+
+            try {
+                const { error } = await supabase
+                    .from('likes')
+                    .delete()
+                    .eq('cat_id', parseInt(catId))
+                    .eq('user_id', currentUser.id);
+
+                if (error) throw error;
+
+                showResult('likesResult', 'success',
+                    '✓ 成功取消点赞',
+                    null
+                );
+            } catch (error) {
+                showResult('likesResult', 'error',
+                    '✗ 取消点赞失败',
+                    { error: error.message }
+                );
+            }
+        }
+
+        async function testGetComments() {
+            const catId = document.getElementById('commentCatId').value;
+
+            try {
+                const { data, error } = await supabase
+                    .from('comments')
+                    .select('*')
+                    .eq('cat_id', catId)
+                    .order('created_at', { ascending: false });
+
+                if (error) throw error;
+
+                showResult('commentsResult', 'success',
+                    `✓ 成功获取评论（共 ${data.length} 条）`,
+                    data
+                );
+            } catch (error) {
+                showResult('commentsResult', 'error',
+                    '✗ 获取评论失败',
+                    { error: error.message }
+                );
+            }
+        }
+
+        async function testAddComment() {
+            if (!currentUser) {
+                showResult('commentsResult', 'error', '✗ 请先登录', null);
+                return;
+            }
+
+            const catId = document.getElementById('commentCatId').value;
+            const content = document.getElementById('commentContent').value;
+
+            if (!content.trim()) {
+                showResult('commentsResult', 'error', '✗ 评论内容不能为空', null);
+                return;
+            }
+
+            try {
+                const { data, error } = await supabase
+                    .from('comments')
+                    .insert({
+                        cat_id: parseInt(catId),
+                        user_id: currentUser.id,
+                        content: content.trim()
+                    })
+                    .select();
+
+                if (error) throw error;
+
+                showResult('commentsResult', 'success',
+                    '✓ 成功添加评论',
+                    data
+                );
+
+                // Clear input
+                document.getElementById('commentContent').value = '';
+            } catch (error) {
+                showResult('commentsResult', 'error',
+                    '✗ 添加评论失败',
+                    { error: error.message }
+                );
+            }
+        }
+
+        async function checkAuthStatus() {
+            try {
+                const { data } = await supabase.auth.getSession();
+
+                if (data.session) {
+                    currentUser = data.session.user;
+                    showResult('authResult', 'success',
+                        '✓ 已登录',
+                        {
+                            email: currentUser.email,
+                            id: currentUser.id,
+                            created_at: currentUser.created_at
+                        }
+                    );
+                } else {
+                    showResult('authResult', 'info',
+                        'ℹ 未登录',
+                        { message: '请在主应用中登录后再测试互动功能' }
+                    );
+                }
+            } catch (error) {
+                showResult('authResult', 'error',
+                    '✗ 检查登录状态失败',
+                    { error: error.message }
+                );
+            }
+        }
+    </script>
+</body>
+</html>

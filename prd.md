@@ -46,8 +46,17 @@ create table public.cats (
   created_at timestamp with time zone not null default now(),
   updated_at timestamp without time zone null default now(),
   images text[] null,
+  user_id uuid REFERENCES auth.users(id) ON DELETE CASCADE,
   constraint cat_pkey primary key (id)
 ) TABLESPACE pg_default;
+
+CREATE TABLE public.profiles (
+    id uuid REFERENCES auth.users(id) ON DELETE CASCADE PRIMARY KEY,
+    username text UNIQUE,
+    avatar_url text,
+    created_at timestamp with time zone DEFAULT now(),
+    updated_at timestamp with time zone DEFAULT now()
+);
 ```
 
 ### RLS 策略配置：
