@@ -2397,8 +2397,11 @@
                         commentCountSpan.textContent = commentCount;
                     }
 
+                    // Fetch user emails for all comments - 获取所有评论者的邮箱
+                    const commentsWithEmails = await fetchCommentsWithEmails(comments);
+
                     // Render comments - 渲染评论
-                    renderComments(card, comments);
+                    renderComments(card, commentsWithEmails);
                 }
             } catch (error) {
                 console.error('加载互动数据失败:', error);
@@ -2554,7 +2557,10 @@
                         .order('created_at', { ascending: false });
 
                     if (!loadError && comments) {
-                        renderComments(card, comments);
+                        // Fetch user emails for all comments - 获取所有评论者的邮箱
+                        const commentsWithEmails = await fetchCommentsWithEmails(comments);
+
+                        renderComments(card, commentsWithEmails);
 
                         // Update comment count - 更新评论数
                         const commentCountSpan = card.querySelector('.comment-count');
@@ -2583,6 +2589,55 @@
         }
 
         /**
+         * Fetch user emails for comments
+         * 获取评论的用户邮箱
+         * @param {Array} comments - Comments array
+         * @returns {Promise<Array>} - Comments with email data
+         */
+        async function fetchCommentsWithEmails(comments) {
+            if (!comments || comments.length === 0) {
+                return comments;
+            }
+
+            // Get unique user IDs - 获取唯一的用户 ID
+            const userIds = [...new Set(comments.map(c => c.user_id))];
+
+            console.log('正在查询用户邮箱，user_ids:', userIds);
+
+            // Fetch profiles for these users - 查询这些用户的 profiles
+            const { data: profiles, error } = await supabase
+                .from('profiles')
+                .select('id, email')
+                .in('id', userIds);
+
+            if (error) {
+                console.error('获取用户邮箱失败:', error);
+                console.error('错误详情:', JSON.stringify(error, null, 2));
+                return comments;
+            }
+
+            console.log('查询到的 profiles:', profiles);
+
+            // Create a map of user_id -> email - 创建 user_id -> email 的映射
+            const emailMap = {};
+            if (profiles) {
+                profiles.forEach(profile => {
+                    emailMap[profile.id] = profile.email;
+                    console.log(`映射: ${profile.id} -> ${profile.email}`);
+                });
+            }
+
+            // Add email to each comment - 为每条评论添加邮箱
+            const result = comments.map(comment => ({
+                ...comment,
+                user_email: emailMap[comment.user_id] || null
+            }));
+
+            console.log('添加邮箱后的评论:', result);
+            return result;
+        }
+
+        /**
          * Render comments list
          * 渲染评论列表
          * @param {HTMLElement} card - Card element
@@ -2601,14 +2656,15 @@
                 const date = new Date(comment.created_at);
                 const timeAgo = getTimeAgo(date);
 
-                // Get email username (part before @) - 获取邮箱用户名
-                const email = comment.user_id || 'anonymous';
-                const username = email.split('@')[0] || '匿名用户';
+                // Get email (from user_email field added by fetchCommentsWithEmails)
+                // 获取邮箱（来自 fetchCommentsWithEmails 添加的 user_email 字段）
+                const email = comment.user_email || '匿名用户';
+                const username = email.includes('@') ? email.split('@')[0] : email;
 
                 return `
                     <div class="comment-item">
                         <div class="comment-header">
-                            <span class="comment-author">${username}</span>
+                            <span class="comment-author">${escapeHtml(username)}</span>
                             <span class="comment-time">${timeAgo}</span>
                         </div>
                         <div class="comment-content">${escapeHtml(comment.content)}</div>
