@@ -2711,16 +2711,9 @@
         // Initialize App - 初始化应用
         // ===========================================================
 
-        // Initialize when DOM is ready - DOM准备好后初始化
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', () => {
-                initAuth();
-                initCatCards();
-            });
-        } else {
-            initAuth();
-            initCatCards();
-        }
+        // 脚本在 </body> 之前执行，此时 DOM 已经加载完成，直接初始化
+        initAuth();
+        initCatCards();
     </script>
 </body>
 </html>
