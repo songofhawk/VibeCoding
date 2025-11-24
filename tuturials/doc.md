@@ -1,8 +1,4 @@
-### 1 编码篇
-
-
-
-### 2 言出法随
+### 1 言出法随
 
 在这部分，我们将一起体验 AI 编程的无限魔力。无需任何编程基础，你只需要用自然语言描述想要什么，AI 就能帮你实现。这个过程就像对着魔法师说出咒语，然后眼看着你的想法变成现实。
 
@@ -14,7 +10,7 @@
 
 5 分钟内让你获得第一次"言出法随"的成就感。
 
-#### 2.1 初探 AI 编程：一句话小项目（网页）
+#### 1.1 初探 AI 编程：一句话小项目（网页）
 
 话不多说，我们先来做一个网页，它的好处是即时可见：你生成的页面可以立刻在浏览器中打开，看到漂亮的效果。
 
@@ -55,28 +51,28 @@ cc 马上就开始工作了，不过在执行任务的时候，cc 经常会申�
 如果在 VSCode 里直接打开它，里面大概是这个样子：
 
 ```
-<！DOCTYPE html>
+<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width， initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>2026 新年倒计时</title>
     <style>
         * {
-            margin： 0;
-            padding： 0;
-            box-sizing： border-box;
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
 
         body {
-            font-family： 'Arial'， sans-serif;
-            background： linear-gradient(135deg， #0a1f44 0%， #1a4d8f 50%， #0a1f44 100%);
-            min-height： 100vh;
-            display： flex;
-            justify-content： center;
-            align-items： center;
-            overflow： hidden;
-            position： relative;
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #0a1f44 0%, #1a4d8f 50%, #0a1f44 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            position: relative;
         }
  ......
 ```
@@ -97,14 +93,16 @@ cc 马上就开始工作了，不过在执行任务的时候，cc 经常会申�
 
 
 小练习：
+- 元旦也许没有那么令人期待，春节才是大长假！把倒计时的时点，改到第二年的春节吧。
+- 增加一个进度条，让假日的到来，越来越让人开心。
+- 更换不同的背景色，比如表示喜庆的大红色
+- 加上“适合手机观看”，再发给自己的手机试试
 
 
 
 
 
-#### 2.2 
-
-#### 2.3 本地代码初体验：一句话小项目（本机）
+#### 2.2 本地代码初体验：一句话小项目（本机）
 
 刚才你的第一个小项目，在网页版的 ChatGPT (豆包，Deepseek）工具中也能生成。不过既然本机已经安装了像 cc 这样的工具，那可就不仅仅是玩玩了，下面就来试试做个提高效率的小工具。
 
@@ -177,7 +175,7 @@ cc 马上就开始工作了，不过在执行任务的时候，cc 经常会申�
 
 ##### 3.1.2 演进路线
 
-我们将分 8 个阶段，来完成这个项目。
+我们将分 7 个阶段，来完成这个项目。
 
 
 
@@ -185,55 +183,12 @@ cc 马上就开始工作了，不过在执行任务的时候，cc 经常会申�
 
 
 
-阶段
-
-前端
-
-后端
-
-数据库
-
-其他服务
-
-1-4
-
-HTML/CSS/JS
-
-无
-
-无
-
-无
-
-5
-
-+ localStorage
-
-无
-
-无
-
-无
-
-6
-
-+ 用户系统
-
-Serverless
-
-Supabase
-
-认证服务
-
-7-8
-
-+ 社交功能
-
-+ 数据 API
-
-+ 关系表
-
-云存储
+| 阶段 | 前端 | 后端 | 数据库 | 其他服务 |
+| :--- | :--- | :--- | :--- | :--- |
+| 1-4 | HTML/CSS/JS | 无 | 无 | 无 |
+| 5 | + localStorage | 无 | 无 | 无 |
+| 6 | + 用户系统 | Serverless | Supabase | 认证服务 |
+| 7-8 | + 社交功能 | + 数据 API | + 关系表 | 云存储 |
 
 
 
@@ -304,7 +259,7 @@ UI 风格
 
 参考文档 prd.md 描述的内容，做一个猫咪展示卡片。
 
-发送这个提示词后会，cc 会：
+发送这个提示词后，cc 会：
 
 
 
@@ -364,16 +319,16 @@ UI 风格
         // Sample cat data - 示例猫咪数据
         const catsData = [
             {
-                id： 1，
-                name： "小橘",
-                breed： "橘猫",
-                age： "2岁",
-                gender： "公"，
-                description： "性格温顺，喜欢晒太阳，对小鱼干没有抵抗力。是个不折不扣的吃货，看见食物就会喵喵叫。",
-                image： "https：//images.unsplash.com/photo-1574158622682-e40e69881006?w=500&h=400&fit=crop",
-                badge： "最受欢迎",
-                tags： ["温顺", "亲人", "吃货"]
-            }，
+                id: 1,
+                name: "小橘",
+                breed: "橘猫",
+                age: "2岁",
+                gender: "公",
+                description: "性格温顺，喜欢晒太阳，对小鱼干没有抵抗力。是个不折不扣的吃货，看见食物就会喵喵叫。",
+                image: "https://images.unsplash.com/photo-1574158622682-e40e69881006?w=500&h=400&fit=crop",
+                badge: "最受欢迎",
+                tags: ["温顺", "亲人", "吃货"]
+            },
         ......
     </script>
 </body>
@@ -394,6 +349,9 @@ UI 风格
 
 
 小练习：
+- 试着改变卡片颜色：对 cc 说"把卡片背景改成浅灰色"
+- 给猫咪起更合适的名字
+- 试着添加更多信息：对 cc 说"添加一个'爱好'标签"，并尝试理解新加的 HTML 内容
 
 
 
@@ -438,7 +396,7 @@ UI 风格
 
 ```
 // 文件选择按钮的事件监听
-function processAndDisplayImage(file， imgElement， catId) {
+function processAndDisplayImage(file, imgElement, catId) {
     const reader = new FileReader();
 
     // Read file and convert to data URL - 读取文件并转换为数据URL
@@ -454,7 +412,7 @@ function processAndDisplayImage(file， imgElement， catId) {
         try {
             localStorage.setItem(`cat-image-${catId}`, imageUrl);
         } catch (e) {
-            console.warn('无法保存图片到本地存储:'， e);
+            console.warn('无法保存图片到本地存储:', e);
         }
     };
 
@@ -588,13 +546,12 @@ Claude Code 会根据你的操作系统自动执行安装命令：
 
 Claude 会引导你完成登录流程：
 
-
-
-
-
-
-
-
+1. 选择 `GitHub.com`
+2. 选择 `HTTPS`
+3. 选择 `Yes` (Login with a web browser)
+4. 复制终端显示的一次性代码 (One-time code)
+5. 按回车打开浏览器
+6. 在浏览器中粘贴代码并授权
 
 验证安装：
 
@@ -749,13 +706,13 @@ function startSlideshow() {
     setInterval(() => {
         currentIndex = (currentIndex + 1) % images.length; // 循环
         showImage(currentIndex);
-    }， 3000); // 每3秒
+    }, 3000); // 每3秒
 }
 ```
 
 
 
-我在做这个需求的时候， cc 到这里没能一次性完成，它修改后的页面，无法再上传图片了（点击按钮没有反应），这时候，可以把现象告诉它，请它修改（你永远可以把 cc 当做实习生，明确告诉它你的任务和它的错误）：
+我在做这个需求的时候，cc 到这里没能一次性完成，它修改后的页面，无法再上传图片了（点击按钮没有反应），这时候，可以把现象告诉它，请它修改（你永远可以把 cc 当做实习生，明确告诉它你的任务和它的错误）：
 
 
 我测试了一下，修改属性是成功的，也保存了，图片上也出现了左右切换的按钮，但是这回上传图片失败了，点击“选择照片”按钮没有反应。
@@ -779,6 +736,10 @@ function startSlideshow() {
 
 
 小练习：试试对 cc 说
+- "添加暂停/播放按钮，控制自动轮播"，
+- "添加删除照片功能，可以删除不想要的照片"
+- "添加照片顺序调整功能，拖拽改变顺序"。
+每一个新功能都会让你的项目更强大。
 
 
 
@@ -1095,7 +1056,7 @@ create table public.cats (
         let supabaseEnabled = false;
 
         try {
-            if (SUPABASE_ANON_KEY !== 'YOUR_SUPABASE_ANON_KEY_HERE') {
+            if (SUPABASE_ANON_KEY !== '【supabase annon key here】') {
                 supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
                 supabaseEnabled = true;
                 console.log('✓ Supabase 客户端已初始化');
@@ -1454,8 +1415,6 @@ const { data, error } = await supabase.storage
 - [互动功能详细说明](../docs/INTERACTIONS.md)
 - [数据库配置脚本](../docs/setup-interactions.sql)
 
-##### 3.8.4 阶段8：互动和排行榜
-
 
 
 #### 3.9 代码阅读与学习
@@ -1554,8 +1513,8 @@ graph TD
     C --> C1[loadCatsFromDatabase]
     C --> C2[saveCatToDatabase]
     C --> C3[updateCatImages]
-    C --> C4[deleteCatFromDatabase]
-    C --> C5[uploadImageToStorage]
+    C --> C4[uploadImageToStorage]
+    C --> C5[createNewCat]
 
     D --> D1[showAuthModal]
     D --> D2[handleLogin]
@@ -1569,11 +1528,12 @@ graph TD
 
     F --> F1[initCatCards]
     F --> F2[createCatCard]
-    F --> F3[setupImageCarousel]
+    F --> F3[setupCarousel]
     F --> F4[setupEditMode]
-    F --> F5[updateAuthUI]
+    F --> F5[setupPhotoUpload]
+    F --> F6[setupGifGeneration]
 
-    G --> G1[window.onload = init]
+    G --> G1[initAuth 和 initCatCards 直接调用]
 
     style A fill:#667eea,stroke:#333,stroke-width:3px,color:#fff
     style B fill:#48bb78,stroke:#333,stroke-width:2px,color:#fff
@@ -1603,16 +1563,29 @@ initCatCards();
 **步骤2：初始化 Supabase 连接（建立数据通道）**
 
 ```javascript
-// 配置 Supabase 连接
-const SUPABASE_URL = 'https://xxx.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGc...';
+// 配置 Supabase 连接信息
+const SUPABASE_URL = 'https://vswrhnmhumfxgfrwpfwc.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGc...'; // 实际的 anon key
 
-// 创建客户端实例
-supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-supabaseEnabled = true;
+// 初始化 Supabase 客户端（带错误处理）
+let supabase = null;
+let supabaseEnabled = false;
+
+try {
+    // 检查是否已配置 key
+    if (SUPABASE_ANON_KEY !== 'YOUR_SUPABASE_ANON_KEY_HERE') {
+        supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        supabaseEnabled = true;
+        console.log('✓ Supabase 客户端已初始化');
+    } else {
+        console.warn('⚠ Supabase 未配置，请在代码中设置 SUPABASE_ANON_KEY');
+    }
+} catch (error) {
+    console.error('Supabase 初始化失败:', error);
+}
 ```
 
-这一步建立了前端和数据库之间的连接。就像小明给远方的服务器打了个电话，说："我准备好了，请给我发送数据！"
+这一步建立了前端和数据库之间的连接。代码中包含了错误处理：首先检查是否配置了正确的 key，然后尝试创建连接。就像小明给远方的服务器打电话，如果号码正确，连接就建立成功了。
 
 数据流向示意图：
 ```mermaid
@@ -1628,23 +1601,40 @@ sequenceDiagram
     Note over Browser,Supabase: 前端与后端的数据通信
 ```
 
-**步骤3：检查用户登录状态（识别身份）**
+**步骤3：初始化认证系统（识别身份）**
 
 ```javascript
-async function init() {
+async function initAuth() {
+    // 显示认证栏
+    document.getElementById('authBar').style.display = 'flex';
+
     // 检查用户是否已登录
-    const { data: { user } } = await supabase.auth.getUser();
-    if (user) {
-        currentUser = user;
-        updateAuthUI(); // 显示"欢迎回来，xxx@mail.com"
+    if (supabaseEnabled && supabase) {
+        const { data } = await supabase.auth.getSession();
+        if (data.session) {
+            currentUser = data.session.user;
+            updateAuthUI(); // 显示"欢迎回来，xxx@mail.com"
+        }
     }
 
-    // 加载猫咪数据
-    await initCatCards();
+    // 设置认证事件监听器（登录、注册、登出按钮）
+    setupAuthEventListeners();
+
+    // 监听认证状态变化（用户登录/登出时自动更新UI）
+    if (supabaseEnabled && supabase) {
+        supabase.auth.onAuthStateChange((event, session) => {
+            if (session) {
+                currentUser = session.user;
+            } else {
+                currentUser = null;
+            }
+            updateAuthUI();
+        });
+    }
 }
 ```
 
-这里检查小明是否已经登录过。如果登录了，页面右上角会显示他的邮箱；如果没登录，显示"登录"和"注册"按钮。
+这个函数负责初始化整个认证系统。它会检查小明是否已经登录过：如果登录了，页面右上角会显示他的邮箱；如果没登录，显示"登录"和"注册"按钮。同时，它还会监听认证状态的变化，当用户登录或登出时自动更新界面。
 
 **步骤4：加载猫咪数据（获取内容）**
 
@@ -1661,12 +1651,20 @@ async function loadCatsFromDatabase() {
         return null;
     }
 
-    // 转换数据格式
+    // 转换数据库格式到应用格式
     return data.map(dbCat => ({
         id: dbCat.id,
         name: dbCat.name,
-        images: dbCat.images || [默认图片],
-        // ... 其他字段
+        breed: dbCat.breed || '未知品种',
+        age: dbCat.age ? `${dbCat.age}岁` : '未知',  // 数字转字符串：2 → "2岁"
+        gender: dbCat.sex === 1 ? '公' : dbCat.sex === 2 ? '母' : '未知',  // 性别代码转文字
+        description: dbCat.description || '暂无描述',
+        images: (dbCat.images && Array.isArray(dbCat.images) && dbCat.images.length > 0)
+            ? dbCat.images
+            : [],  // 确保图片是数组，空则为空数组
+        badge: dbCat.user_id ? '我的猫咪' : '待领养',  // 根据是否有主人生成标签
+        user_id: dbCat.user_id,  // 保存用户ID用于权限检查
+        tags: dbCat.tags ? dbCat.tags.split(',').map(t => t.trim()).filter(t => t) : []  // "可爱,亲人" → ["可爱", "亲人"]
     }));
 }
 ```
