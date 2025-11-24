@@ -1768,305 +1768,92 @@ flowchart LR
 
 到这里，小明就能看到一个个精美的猫咪卡片了！整个流程不到 1 秒，但背后经历了连接数据库、查询数据、转换格式、渲染 HTML、绑定事件等多个步骤。
 
-##### 3.9.5 深入理解：异步编程
+##### 3.9.5 深入理解：await 的作用
 
-你可能注意到代码中经常出现 `async` 和 `await` 这两个关键字。它们是 JavaScript 中处理异步操作的方式。什么是异步？
+你可能注意到代码中经常出现 `await` 关键字。它是做什么的呢？
 
-**同步 vs 异步**
+**为什么需要 await？**
 
-```mermaid
-gantt
-    title 同步 vs 异步执行对比
-    dateFormat mm
-    axisFormat %M分钟
+当我们向数据库请求数据时，数据不会立刻返回，而是需要等待一段时间（可能几百毫秒）。在等待期间，JavaScript 不会卡住页面，而是先返回一个"承诺"（Promise），表示"我承诺会给你数据，但现在还没准备好"。
 
-    section 同步执行(排队)
-    煮饭(30分钟)    :done, sync1, 00, 30m
-    炒菜(20分钟)    :done, sync2, 30, 20m
-    煲汤(40分钟)    :done, sync3, 50, 40m
-
-    section 异步执行(并行)
-    煮饭(30分钟)    :active, async1, 00, 30m
-    炒菜(20分钟)    :active, async2, 00, 20m
-    煲汤(40分钟)    :active, async3, 00, 40m
-```
-
-同步执行总耗时：**90分钟**（任务串行执行）
-异步执行总耗时：**40分钟**（任务并行执行，取最长的）
-
-在我们的项目中，从数据库加载数据需要时间（可能几百毫秒）。如果用同步方式，页面会卡住，用户什么都做不了。用异步方式，程序可以先渲染页面框架，数据加载完成后再填充内容。
-
-**async/await 的工作原理**
+如果不用 `await`，你会拿到一个"承诺"而不是实际的数据：
 
 ```javascript
-// 没有 await - 错误示例
+// 错误示例：没有 await
 function loadData() {
-    const data = loadCatsFromDatabase(); // 立即返回 Promise
+    const data = loadCatsFromDatabase();
     console.log(data); // 输出: Promise {<pending>}
-    // 数据还没加载完，得到的是"承诺"而非实际数据
+    // ❌ 得到的是"承诺"，不是猫咪数据！
 }
+```
 
-// 使用 await - 正确示例
+用 `await` 就是告诉程序："等这个承诺兑现，给我实际的数据"：
+
+```javascript
+// 正确示例：使用 await
 async function loadData() {
-    const data = await loadCatsFromDatabase(); // 等待数据加载完成
+    const data = await loadCatsFromDatabase();
     console.log(data); // 输出: [{id:1, name:"小橘"}, ...]
-    // 得到实际的猫咪数据数组
+    // ✓ 得到实际的猫咪数据数组
 }
 ```
 
-形象理解：
-```
-不用 await:
-你: "服务员，来份炒饭！"
-服务员: "好的，请等待。" (返回一个号码牌)
-你: 拿着号码牌就开始吃 ❌ (号码牌不能吃！)
+**形象比喻**
 
-使用 await:
+```
+不用 await（错误）:
 你: "服务员，来份炒饭！"
-服务员: "好的，请等待。"
-你: 等待... 等待... (await)
+服务员: "好的，这是您的号码牌。" (返回 Promise)
+你: 拿着号码牌就要吃 ❌ (号码牌不能吃！)
+
+使用 await（正确）:
+你: "服务员，来份炒饭！"
+服务员: "好的，请稍等。"
+你: 等待... (await)
 服务员: "您的炒饭好了！" (返回实际的饭)
 你: 开始吃饭 ✓
 ```
 
-##### 3.9.6 核心功能代码解读
+**为什么不把 await 内置到函数里？**
 
-现在让我们仔细看几个关键函数，理解它们的工作原理。
+你可能会想："既然每次都要写 `await`，为什么不直接内置到函数调用中呢？"
 
-**功能1：上传图片到云存储**
+答案是：**因为有时我们需要并发执行多个任务来提高效率**。
 
-```javascript
-async function uploadImageToStorage(file, catId) {
-    // 1. 生成唯一文件名
-    const timestamp = Date.now();           // 当前时间戳: 1762661050243
-    const fileExt = file.name.split('.').pop();  // 文件扩展名: "jpg"
-    const randomStr = Math.random().toString(36).substring(7);  // 随机字符串: "a7x3m"
-    const fileName = `${timestamp}_${randomStr}.${fileExt}`;    // 1762661050243_a7x3m.jpg
-
-    // 2. 构建完整路径: {catId}/{fileName}
-    const filePath = `${catId}/${fileName}`;  // 例如: "3/1762661050243_a7x3m.jpg"
-
-    // 3. 上传文件到 Supabase Storage
-    const { data, error } = await supabase.storage
-        .from('cat-images')      // 从 cat-images 桶
-        .upload(filePath, file, {
-            cacheControl: '3600',     // 缓存1小时
-            upsert: false             // 不覆盖同名文件
-        });
-
-    if (error) {
-        throw error;  // 上传失败，抛出错误
-    }
-
-    // 4. 获取公开访问 URL
-    const { data: urlData } = supabase.storage
-        .from('cat-images')
-        .getPublicUrl(filePath);
-
-    return urlData.publicUrl;  // 返回: "https://xxx.supabase.co/storage/.../3/1762661050243_a7x3m.jpg"
-}
-```
-
-文件上传流程图：
-```mermaid
-sequenceDiagram
-    participant File as 📄 本地文件<br/>cat.jpg
-    participant Code as 程序代码
-    participant Storage as Supabase Storage<br/>cat-images 桶
-    participant DB as 数据库
-
-    File->>Code: ①选择文件
-    Code->>Code: ②生成唯一文件名<br/>1762661050243_a7x3m.jpg
-    Code->>Code: ③构建路径<br/>3/1762661050243_a7x3m.jpg
-    Code->>Storage: ④上传文件<br/>supabase.storage.upload()
-    Storage-->>Code: ⑤返回成功
-    Code->>Storage: ⑥获取公开URL<br/>getPublicUrl()
-    Storage-->>Code: ⑦返回URL<br/>https://.../3/17...jpg
-    Code->>DB: ⑧保存URL到数据库<br/>images: ["https://..."]
-    DB-->>Code: ⑨保存成功
-```
-
-**功能2：点赞功能的实现**
+举个例子，假设我们要同时加载猫咪数据、用户信息和评论：
 
 ```javascript
-async function setupLikeButton(card, catId) {
-    const likeBtn = card.querySelector('.like-btn');
-    const likeCount = card.querySelector('.like-count');
+// 方式1：顺序等待（慢）
+async function loadAll() {
+    const cats = await loadCats();      // 等 500ms
+    const user = await loadUser();      // 再等 300ms
+    const comments = await loadComments(); // 再等 400ms
+    // 总耗时：500 + 300 + 400 = 1200ms
+}
 
-    // 1. 检查当前用户是否已点赞
-    let userLiked = false;
-    if (currentUser) {
-        const { data } = await supabase
-            .from('likes')
-            .select('*')
-            .eq('cat_id', catId)
-            .eq('user_id', currentUser.id)
-            .single();
+// 方式2：并发执行（快）
+async function loadAll() {
+    // 同时发起三个请求（不等待）
+    const catsPromise = loadCats();
+    const userPromise = loadUser();
+    const commentsPromise = loadComments();
 
-        userLiked = !!data;  // 转换为布尔值
-        if (userLiked) {
-            likeBtn.classList.add('liked');  // 添加红色样式
-        }
-    }
-
-    // 2. 绑定点击事件
-    likeBtn.addEventListener('click', async () => {
-        if (!currentUser) {
-            alert('请先登录');
-            return;
-        }
-
-        if (userLiked) {
-            // 取消点赞
-            await supabase
-                .from('likes')
-                .delete()
-                .eq('cat_id', catId)
-                .eq('user_id', currentUser.id);
-
-            likeBtn.classList.remove('liked');
-            likeCount.textContent = parseInt(likeCount.textContent) - 1;
-            userLiked = false;
-        } else {
-            // 添加点赞
-            await supabase
-                .from('likes')
-                .insert({
-                    cat_id: catId,
-                    user_id: currentUser.id
-                });
-
-            likeBtn.classList.add('liked');
-            likeCount.textContent = parseInt(likeCount.textContent) + 1;
-            userLiked = true;
-        }
-    });
+    // 等待所有请求完成
+    const [cats, user, comments] = await Promise.all([
+        catsPromise,
+        userPromise,
+        commentsPromise
+    ]);
+    // 总耗时：max(500, 300, 400) = 500ms（并发执行）
 }
 ```
 
-点赞状态机：
-```mermaid
-stateDiagram-v2
-    [*] --> 未登录
-    [*] --> 已登录未点赞
-    [*] --> 已登录已点赞
+这就是为什么 `await` 需要手动添加：它让你决定什么时候等待，什么时候并发执行。
 
-    未登录 --> 未登录 : 点击按钮<br/>提示"请先登录"
+**在我们的项目中**
 
-    已登录未点赞 --> 已登录已点赞 : 点击按钮<br/>INSERT INTO likes<br/>UI: ❤️变红, 数量+1
+大部分情况下，我们的操作是有依赖关系的（比如要先加载数据，再渲染页面），所以使用 `await` 按顺序执行就好了。但如果将来需要同时上传多张图片或者同时获取多只猫的信息，就可以用并发方式来提高效率。
 
-    已登录已点赞 --> 已登录未点赞 : 点击按钮<br/>DELETE FROM likes<br/>UI: ❤️恢复, 数量-1
-
-    note right of 未登录
-        用户未登录状态
-        无法点赞
-    end note
-
-    note right of 已登录未点赞
-        用户已登录
-        但未点赞此猫
-    end note
-
-    note right of 已登录已点赞
-        用户已登录
-        且已点赞此猫
-    end note
-```
-
-**功能3：评论功能的实现**
-
-```javascript
-async function setupCommentForm(card, catId) {
-    const form = card.querySelector('.comment-form');
-    const input = card.querySelector('.comment-input');
-    const commentsList = card.querySelector('.comments-list');
-
-    form.addEventListener('submit', async (e) => {
-        e.preventDefault();  // 阻止表单默认提交行为
-
-        const content = input.value.trim();
-        if (!content) return;  // 空评论不提交
-
-        if (!currentUser) {
-            alert('请先登录');
-            return;
-        }
-
-        // 1. 转义 HTML 防止 XSS 攻击
-        const safeContent = escapeHtml(content);
-
-        // 2. 插入评论到数据库
-        const { data, error } = await supabase
-            .from('comments')
-            .insert({
-                cat_id: catId,
-                user_id: currentUser.id,
-                content: safeContent
-            })
-            .select()
-            .single();
-
-        if (error) {
-            alert('评论失败');
-            return;
-        }
-
-        // 3. 立即在页面上显示新评论（乐观更新）
-        const newComment = document.createElement('div');
-        newComment.className = 'comment-item';
-        newComment.innerHTML = `
-            <div class="comment-author">${currentUser.email}</div>
-            <div class="comment-content">${safeContent}</div>
-            <div class="comment-time">刚刚</div>
-        `;
-        commentsList.prepend(newComment);  // 添加到顶部
-
-        // 4. 清空输入框
-        input.value = '';
-    });
-}
-
-// XSS 防护函数
-function escapeHtml(text) {
-    const div = document.createElement('div');
-    div.textContent = text;  // textContent 会自动转义
-    return div.innerHTML;
-}
-```
-
-评论提交流程：
-
-**正常评论：**
-```mermaid
-sequenceDiagram
-    participant User as 用户输入<br/>"好可爱！"
-    participant XSS as XSS防护<br/>escapeHtml()
-    participant DB as 数据库
-    participant UI as 页面显示
-
-    User->>XSS: 提交评论
-    Note over XSS: 转义处理<br/>(防止注入攻击)
-    XSS->>DB: INSERT INTO comments<br/>content: "好可爱！"
-    DB-->>UI: 保存成功
-    UI->>UI: 立即渲染<br/>显示: "好可爱！"
-```
-
-**恶意输入防护：**
-```mermaid
-sequenceDiagram
-    participant User as 恶意输入<br/>"&lt;script&gt;alert&lt;/script&gt;"
-    participant XSS as XSS防护<br/>escapeHtml()
-    participant DB as 数据库
-    participant UI as 页面显示
-
-    User->>XSS: 提交评论
-    Note over XSS: 转义为:<br/>"&amp;lt;script&amp;gt;..."
-    XSS->>DB: 保存转义后内容
-    DB-->>UI: 保存成功
-    UI->>UI: 显示纯文本<br/>"&lt;script&gt;alert&lt;/script&gt;"<br/>(不会执行代码)
-
-    Note over User,UI: XSS 攻击被成功阻止
-```
 
 ##### 3.9.7 通过 AI 学习代码
 
