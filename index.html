@@ -1563,7 +1563,8 @@
     <script src="https://cdn.jsdelivr.net/npm/gifshot@0.4.5/dist/gifshot.min.js"></script>
 
     <!-- Supabase client library - Supabase 客户端库 -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- 锁定版本号避免自动升级导致破坏性变更 -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.95.3"></script>
 
     <script>
         // Supabase configuration - Supabase 配置
@@ -1573,12 +1574,14 @@
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZzd3Jobm1odW1meGdmcndwZndjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI2NDU2NDMsImV4cCI6MjA3ODIyMTY0M30.LRkpH5Wp-w9BOwD-CUJ3Yz9G_5Us0fkjBgKN3zdcL2s'; // 请替换为实际的 anon key
 
         // Initialize Supabase client - 初始化 Supabase 客户端
-        let supabase = null;
+        // CDN 的 UMD 构建已在全局声明了 var supabase，不能用 let 重新声明
+        const _supabaseLib = window.supabase;
+        supabase = null;
         let supabaseEnabled = false;
 
         try {
             if (SUPABASE_ANON_KEY !== 'YOUR_SUPABASE_ANON_KEY_HERE') {
-                supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+                supabase = _supabaseLib.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
                 supabaseEnabled = true;
                 console.log('✓ Supabase 客户端已初始化');
             } else {
