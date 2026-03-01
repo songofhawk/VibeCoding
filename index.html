@@ -626,23 +626,65 @@
         /* Loading animation */
         .loading {
             text-align: center;
-            color: white;
-            font-size: 1.2rem;
+            color: var(--fg, white);
+            font-size: 1rem;
+            padding: 80px 20px;
+            grid-column: 1 / -1;
+        }
+        .loading-cat {
+            font-size: 3rem;
+            animation: bounce 0.6s ease-in-out infinite alternate;
+        }
+        .loading-dots::after {
+            content: '';
+            animation: dots 1.5s steps(4, end) infinite;
+        }
+        @keyframes bounce {
+            from { transform: translateY(0); }
+            to { transform: translateY(-12px); }
+        }
+        @keyframes dots {
+            0% { content: ''; }
+            25% { content: '.'; }
+            50% { content: '..'; }
+            75% { content: '...'; }
         }
 
-        .loading-spinner {
-            border: 4px solid rgba(255, 255, 255, 0.3);
-            border-top: 4px solid white;
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            animation: spin 1s linear infinite;
-            margin: 20px auto;
+        .error-message {
+            text-align: center;
+            color: var(--fg);
+            padding: 60px 20px;
+            grid-column: 1 / -1;
         }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+        .error-message .error-emoji {
+            font-size: 4rem;
+            margin-bottom: 12px;
+        }
+        .error-message p {
+            font-size: 15px;
+            color: var(--fg-muted);
+            margin-bottom: 24px;
+            line-height: 1.6;
+        }
+        .error-message .retry-btn {
+            background: #111827;
+            border: none;
+            color: #fff;
+            padding: 10px 24px;
+            border-radius: var(--radius-sm);
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 180ms var(--ease), transform 180ms var(--ease);
+        }
+        .error-message .retry-btn:hover {
+            background: #0B1220;
+            transform: translateY(-1px);
+        }
+        .error-message .retry-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
         }
 
         /* Interactions section - 互动区域样式 */
@@ -1553,8 +1595,8 @@
         </section>
         <div id="cardsContainer" class="cards-grid">
             <div class="loading">
-                <div class="loading-spinner"></div>
-                <p>加载中...</p>
+                <div class="loading-cat">🐱</div>
+                <p>猫咪们正在赶来<span class="loading-dots"></span></p>
             </div>
         </div>
     </div>
@@ -1663,6 +1705,19 @@
         ];
 
         /**
+         * 显示可爱的错误提示
+         */
+        function showErrorMessage(container, msg, onRetry) {
+            container.innerHTML = `
+                <div class="error-message">
+                    <div class="error-emoji">😿</div>
+                    <p>${msg}</p>
+                    <button class="retry-btn" onclick="this.disabled=true;this.textContent='重新连接中...'">再试一次喵~</button>
+                </div>`;
+            container.querySelector('.retry-btn').addEventListener('click', onRetry);
+        }
+
+        /**
          * Load cats from database
          * 从数据库加载猫咪数据
          * @returns {Promise<Array>} - Array of cat data
@@ -1714,17 +1769,26 @@
         async function initCatCards() {
             const container = document.getElementById('cardsContainer');
 
-            // Load cats from database - 从数据库加载猫咪
-            const dbCats = await loadCatsFromDatabase();
+            try {
+                // Load cats from database - 从数据库加载猫咪
+                const dbCats = await loadCatsFromDatabase();
 
-            // If database load successful, use database data; otherwise use default data
-            // 如果数据库加载成功,使用数据库数据;否则使用默认数据
-            if (dbCats && dbCats.length > 0) {
-                catsData.length = 0; // Clear default data
-                catsData.push(...dbCats);
-                console.log(`从数据库加载了 ${dbCats.length} 只猫咪`);
-            } else {
-                console.log('使用默认数据');
+                // If database load successful, use database data; otherwise use default data
+                if (dbCats && dbCats.length > 0) {
+                    catsData.length = 0;
+                    catsData.push(...dbCats);
+                    console.log(`从数据库加载了 ${dbCats.length} 只猫咪`);
+                } else if (!dbCats && supabaseEnabled) {
+                    // 数据库加载失败，显示错误提示
+                    showErrorMessage(container, '喵呜...网络好像开小差了，猫咪们迷路了', initCatCards);
+                    return;
+                } else {
+                    console.log('使用默认数据');
+                }
+            } catch (error) {
+                console.error('initCatCards 出错:', error);
+                showErrorMessage(container, '喵呜...加载出了点小问题，猫咪们正在赶来的路上', initCatCards);
+                return;
             }
 
             // Simulate loading delay - 模拟加载延迟
@@ -2657,10 +2721,14 @@
 
             // Check if user is already logged in - 检查用户是否已登录
             if (supabaseEnabled && supabase) {
-                const { data } = await supabase.auth.getSession();
-                if (data.session) {
-                    currentUser = data.session.user;
-                    updateAuthUI();
+                try {
+                    const { data } = await supabase.auth.getSession();
+                    if (data.session) {
+                        currentUser = data.session.user;
+                        updateAuthUI();
+                    }
+                } catch (error) {
+                    console.error('获取登录状态失败:', error);
                 }
             }
 
